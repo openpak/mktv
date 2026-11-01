@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.2.2 — 2026-11-01
+
+- Footer line "Part of the OpenPak network" moved to the bottom line, as on the other Open sites
+
 ## v0.2.1 — 2026-11-01
 
 - The site's only address is kart.openpak.org (was openkart.openpak.org): default public URL, sign-in redirect and docs
