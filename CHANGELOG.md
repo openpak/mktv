@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.1.1 — 2026-11-01
+
+- Default port 20190 (20150 belongs to connectivity)
+
 ## v0.1.0 — 2026-11-01
 
 - First release: highlights, courses (ranking and ghosts), tournaments, About

@@ -12,6 +12,6 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 65532 -h /app app
 COPY --from=build /out/mktv /app/mktv
 USER 65532:65532
-ENV MKTV_ADDR=:20150
-EXPOSE 20150
+ENV MKTV_ADDR=:20190
+EXPOSE 20190
 ENTRYPOINT ["/app/mktv"]

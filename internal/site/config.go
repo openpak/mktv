@@ -10,7 +10,7 @@ import (
 
 // Config is read from the environment (see example.env).
 type Config struct {
-	Addr         string // MKTV_ADDR, default :20150
+	Addr         string // MKTV_ADDR, default :20190
 	APIURL       string // MKTV_API_URL, the mario-kart-8 read API (required)
 	PublicURL    string // MKTV_PUBLIC_URL, https://openkart.openpak.org
 	OpenPakURL   string // MKTV_OPENPAK_URL, links to the main site, default https://openpak.org
@@ -23,7 +23,7 @@ type Config struct {
 // ConfigFromEnv builds and validates a Config.
 func ConfigFromEnv(get func(string) string) (Config, error) {
 	c := Config{
-		Addr:         or(get("MKTV_ADDR"), ":20150"),
+		Addr:         or(get("MKTV_ADDR"), ":20190"),
 		APIURL:       strings.TrimRight(get("MKTV_API_URL"), "/"),
 		PublicURL:    strings.TrimRight(or(get("MKTV_PUBLIC_URL"), "https://openkart.openpak.org"), "/"),
 		OpenPakURL:   strings.TrimRight(or(get("MKTV_OPENPAK_URL"), "https://openpak.org"), "/"),

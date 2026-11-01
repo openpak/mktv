@@ -277,7 +277,7 @@ func TestConfig(t *testing.T) {
 		t.Error("non-http URL")
 	}
 	c, err := ConfigFromEnv(env(map[string]string{"MKTV_API_URL": "http://x:1/"}))
-	if err != nil || c.APIURL != "http://x:1" || c.Addr != ":20150" {
+	if err != nil || c.APIURL != "http://x:1" || c.Addr != ":20190" {
 		t.Errorf("%+v %v", c, err)
 	}
 }
