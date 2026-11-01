@@ -1,0 +1,7 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head"><h1>Tournaments</h1><p>Community tournaments created in the game, newest first.</p></div>
+{{if .Data.Items}}
+<ul class="card rows">{{range .Data.Items}}<li><a class="name" href="/tournaments/{{.ID}}">{{.Name}}</a><span class="sub">{{.Participants}} player{{if ne .Participants 1}}s{{end}} · code <code>{{.Code}}</code> · {{ago .Created}}</span></li>{{end}}</ul>
+{{template "pager" .Data.Pager}}
+{{else}}<p class="card empty-card">No tournament has been created yet.</p>{{end}}
+{{template "foot" .}}{{end}}

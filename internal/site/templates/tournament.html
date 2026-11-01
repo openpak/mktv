@@ -1,0 +1,19 @@
+{{define "page"}}{{template "head" .}}
+<p><a class="link-arrow" href="/tournaments">All tournaments</a></p>
+<div class="page-head"><h1>{{.Data.Name}}</h1>{{if .Data.Description}}<p>{{.Data.Description}}</p>{{end}}</div>
+<dl class="card facts">
+  <dt>Community code</dt><dd><code>{{.Data.Code}}</code></dd>
+  <dt>Host</dt><dd>{{who .Player .Data.Owner}}</dd>
+  <dt>Players</dt><dd>{{.Data.Participants}}</dd>
+  {{with .Data.Start}}<dt>Starts</dt><dd>{{datetime .}}</dd>{{end}}
+  {{with .Data.End}}<dt>Ends</dt><dd>{{datetime .}}</dd>{{end}}
+  <dt>Season</dt><dd>{{.Data.Season}}{{if gt .Data.Season 1}} · <a href="/tournaments/{{.Data.ID}}?season={{add .Data.Season -1}}">previous</a>{{end}}</dd>
+</dl>
+<h2>Leaderboard</h2>
+{{if .Data.Scores}}
+<div class="table-wrap card"><table>
+<thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Score</th><th scope="col">Updated</th></tr></thead>
+<tbody>{{range .Data.Scores}}<tr{{if mine $.Player .Player}} class="me"{{end}}><td>{{.Rank}}</td><td>{{who $.Player .Player}}</td><td class="num"><b>{{.Score}}</b></td><td class="muted">{{ago .Updated}}</td></tr>{{end}}</tbody>
+</table></div>
+{{else}}<p class="card empty-card">No scores in this season yet.</p>{{end}}
+{{template "foot" .}}{{end}}

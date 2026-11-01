@@ -1,0 +1,13 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head"><h1>{{.Player.Display}}</h1><p>Wii U player ID <code>{{.Player.PID}}</code></p></div>
+<h2>Your times</h2>
+{{if .Data.Ranks}}
+<div class="table-wrap card"><table>
+<thead><tr><th scope="col">Course</th><th scope="col" class="num">Time</th><th scope="col" class="num">Rank</th></tr></thead>
+<tbody>{{range .Data.Ranks}}<tr><td><a href="/courses/{{.Course}}">{{course .Course}}</a></td><td class="num"><b>{{.Time}}</b></td><td class="num">{{.Rank}} of {{.Of}}</td></tr>{{end}}</tbody>
+</table></div>
+{{else}}<p class="card empty-card">You have no time trial on the server yet.</p>{{end}}
+<h2>Your highlights</h2>
+{{if .Data.Highlights.Items}}<ul class="tiles">{{range .Data.Highlights.Items}}{{template "tile" .}}{{end}}</ul>
+{{else}}<p class="card empty-card">You have not published a highlight yet.</p>{{end}}
+{{template "foot" .}}{{end}}

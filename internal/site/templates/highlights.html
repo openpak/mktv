@@ -1,0 +1,8 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head"><h1>Highlights</h1><p>Highlight reels uploaded from the game, newest first.</p></div>
+{{if .Data.Items}}
+<ul class="tiles">{{range .Data.Items}}{{template "tile" .}}{{end}}</ul>
+{{template "pager" .Data.Pager}}
+{{else}}<p class="card empty-card">No highlight has been uploaded yet.</p>{{end}}
+{{template "foot" .}}{{end}}
+

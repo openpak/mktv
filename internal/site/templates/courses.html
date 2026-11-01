@@ -1,0 +1,6 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head"><h1>Courses</h1><p>Every course someone has set a time on or uploaded a ghost for.</p></div>
+{{if .Data}}
+<ul class="chips big">{{range .Data}}<li><a class="chip sel" href="/courses/{{.Course}}">{{course .Course}} <small>{{.Ranked}} time{{if ne .Ranked 1}}s{{end}}{{if .Ghosts}} · {{.Ghosts}} ghost{{if ne .Ghosts 1}}s{{end}}{{end}}</small></a></li>{{end}}</ul>
+{{else}}<p class="card empty-card">No time trial has been submitted yet.</p>{{end}}
+{{template "foot" .}}{{end}}

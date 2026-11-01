@@ -1,0 +1,86 @@
+{{/* The shell: openpak.org's header and footer, with this site's own links in the middle.
+     Brand and footer links go to openpak.org; the nav is mktv's. */}}
+{{define "head"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#e9ecf0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#24272d" media="(prefers-color-scheme: dark)">
+<meta name="description" content="OpenKart shows Mario Kart 8 highlights, time-trial ghosts, course rankings and tournaments from OpenPak.">
+<title>{{.Title}} · OpenKart · OpenPak</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/base.css?v={{.Asset}}">
+<link rel="stylesheet" href="/static/mktv.css?v={{.Asset}}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a href="{{.OpenPak}}/" class="brand"><img src="/static/icon.svg" alt="" width="28" height="28">OpenPak</a>
+    <span class="crumb" aria-hidden="true">/</span>
+    <a href="/" class="brand site-name">OpenKart</a>
+    <nav aria-label="OpenKart" class="navlinks">
+      <a href="/highlights" {{if eq .Path "/highlights"}}aria-current="page"{{end}}>Highlights</a>
+      <a href="/courses" {{if eq .Path "/courses"}}aria-current="page"{{end}}>Courses</a>
+      <a href="/tournaments" {{if eq .Path "/tournaments"}}aria-current="page"{{end}}>Tournaments</a>
+    </nav>
+    <div class="ml-auto">
+      {{if .Player}}
+        <a class="btn ghost" href="/me" {{if eq .Path "/me"}}aria-current="page"{{end}}>{{.Player.Display}}</a>
+        <form method="post" action="/signout" class="inline"><button type="submit" class="btn ghost">Sign out</button></form>
+      {{else if .SignIn}}
+        <a class="btn primary" href="/signin">Sign in</a>
+      {{end}}
+    </div>
+  </div>
+</header>
+<main id="main" class="wrap pt-6">
+{{end}}
+
+{{define "foot"}}
+</main>
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <a href="{{.OpenPak}}/" class="brand"><img src="/static/icon.svg" alt="" width="28" height="28">OpenPak</a>
+      <p class="muted" style="max-width:24rem;font-size:.9rem;margin-top:.75rem">An open network for the consoles you already own. OpenKart is OpenPak's own site for Mario Kart 8 on Wii U: highlights, ghosts, rankings and tournaments.</p>
+    </div>
+    <nav aria-labelledby="foot-net"><h2 id="foot-net">Network</h2><ul>
+      <li><a href="{{.OpenPak}}/titles">Titles</a></li>
+      <li><a href="{{.OpenPak}}/features">Features</a></li>
+      <li><a href="{{.OpenPak}}/status">Status</a></li>
+    </ul></nav>
+    <nav aria-labelledby="foot-mk"><h2 id="foot-mk">OpenKart</h2><ul>
+      <li><a href="/highlights">Highlights</a></li>
+      <li><a href="/courses">Courses</a></li>
+      <li><a href="/tournaments">Tournaments</a></li>
+      <li><a href="/about">About this site</a></li>
+    </ul></nav>
+    <nav aria-labelledby="foot-proj"><h2 id="foot-proj">Project</h2><ul>
+      <li><a href="https://github.com/openpak/mktv" rel="noopener">Source</a></li>
+      <li><a href="mailto:{{.Contact}}">Contact</a></li>
+      <li><a href="{{.OpenPak}}/help">Help</a></li>
+    </ul></nav>
+    <nav aria-labelledby="foot-legal"><h2 id="foot-legal">Legal</h2><ul>
+      <li><a href="{{.OpenPak}}/terms">Terms</a></li>
+      <li><a href="{{.OpenPak}}/privacy">Privacy</a></li>
+      <li><a href="{{.OpenPak}}/legal">Legal notices</a></li>
+    </ul></nav>
+    <div class="foot-bottom"><span>© OpenPak · AGPL-3.0</span></div>
+  </div>
+</footer>
+</body>
+</html>
+{{end}}
+
+
+{{define "tile"}}<li><a class="tile sel" href="/highlights/{{.ID}}">
+  {{if .Thumbnail}}<img src="/media/{{.Thumbnail}}" alt="" loading="lazy" width="320" height="180">{{else}}<span class="nothumb" aria-hidden="true">TV</span>{{end}}
+  <span class="cap"><b>{{if .Name}}{{.Name}}{{else}}Highlight {{.ID}}{{end}}</b><span>{{who nil .Owner}} · {{ago .Created}}</span></span>
+</a></li>{{end}}
+
+{{define "pager"}}{{if gt .Pages 1}}<nav class="pager" aria-label="Pages">
+  {{if .Prev}}<a class="btn" href="{{.Prev}}">Newer</a>{{end}}<span>Page {{.Page}} of {{.Pages}}</span>{{if .Next}}<a class="btn" href="{{.Next}}">Older</a>{{end}}
+</nav>{{end}}{{end}}

@@ -1,0 +1,23 @@
+{{define "page"}}{{template "head" .}}
+<p><a class="link-arrow" href="/highlights">All highlights</a></p>
+<div class="page-head"><h1>{{if .Data.Name}}{{.Data.Name}}{{else}}Highlight {{.Data.ID}}{{end}}</h1>
+<p>{{who .Player .Data.Owner}} · {{datetime .Data.Created}}</p></div>
+
+{{/* The video slot: shown only when the upload feature has stored a YouTube id. */}}
+{{with yt .Data.YouTubeID}}
+<div class="video card"><iframe src="{{.}}" title="Highlight video" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+{{else}}
+  {{if .Data.Thumbnail}}<p><img class="thumb card" src="/media/{{.Data.Thumbnail}}" alt="Thumbnail of this highlight" width="640" height="360"></p>{{end}}
+  <p class="notice warn">The replay itself cannot be played in a browser: the game stores it in its own format, which only the game can play back. This page shows what the game uploaded with it.</p>
+{{end}}
+
+<h2>Details</h2>
+<dl class="card facts">
+  <dt>Player</dt><dd>{{who .Player .Data.Owner}}</dd>
+  <dt>Uploaded</dt><dd>{{datetime .Data.Created}}</dd>
+  <dt>Size</dt><dd>{{bytes .Data.Size}}</dd>
+  {{if .Data.Rating}}<dt>Ratings</dt><dd>{{.Data.Rating.Count}} ({{.Data.Rating.Total}} total)</dd>{{end}}
+  {{if .Data.Tags}}<dt>Tags</dt><dd>{{range .Data.Tags}}<code>{{.}}</code> {{end}}</dd>{{end}}
+  <dt>Object</dt><dd><code>{{.Data.ID}}</code> · type {{.Data.DataType}}{{if .Data.MetaSize}} · {{.Data.MetaSize}} B metadata{{end}}</dd>
+</dl>
+{{template "foot" .}}{{end}}
