@@ -1,6 +1,6 @@
 # OpenKart
 
-OpenPak's own website for Mario Kart 8 (Wii U) highlights, ghosts, rankings and tournaments, live at <https://openkart.openpak.org>.
+OpenPak's own website for Mario Kart 8 (Wii U) highlights, ghosts, rankings and tournaments, live at <https://kart.openpak.org>.
 
 | | |
 | --- | --- |

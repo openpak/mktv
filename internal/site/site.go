@@ -24,7 +24,7 @@ var staticFS embed.FS
 
 const pageSize = 20
 
-// Site is the http.Handler of openkart.openpak.org.
+// Site is the http.Handler of kart.openpak.org.
 type Site struct {
 	cfg     Config
 	api     *apiClient

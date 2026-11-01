@@ -1,5 +1,10 @@
 # Changelog — OpenKart (mktv)
 
+## v0.2.1 — 2026-11-01
+
+- The site's only address is kart.openpak.org (was openkart.openpak.org): default public URL, sign-in redirect and docs
+- Footer: "Part of the OpenPak network", linking to openpak.org
+
 ## v0.2.0 — 2026-11-01
 
 - Sign-in through openpak.org single sign-on (`/auth/login`, `/auth/callback`, `/auth/logout`; state and PKCE, server-side code exchange). The top bar has the same Sign in button and account chip as openpak.org; the site has no sign-in form

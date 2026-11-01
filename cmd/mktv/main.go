@@ -1,4 +1,4 @@
-// Command mktv serves openkart.openpak.org, OpenPak's OpenKart site for Mario Kart 8 (Wii U).
+// Command mktv serves kart.openpak.org, OpenPak's OpenKart site for Mario Kart 8 (Wii U).
 package main
 
 import (

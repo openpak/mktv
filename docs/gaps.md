@@ -5,4 +5,4 @@
 3. **Course names.** The ranking category is the game's course number; its mapping to names is not documented in the sources used, so pages say "Course N". `MKTV_COURSES_FILE` supplies names (`<id> <name>` lines) once the numbering is confirmed.
 4. **Player names.** Other players appear by player ID. Names come from the signed-in account only; a public name lookup needs a core endpoint.
 5. **Sign-in.** Through openpak.org single sign-on. The site keeps only the account id, the display name and the Wii U player ID in its own signed session cookie; an account with no Wii U linked sees a note on "Your results" instead of times.
-6. **Public hostname.** `openkart.openpak.org` is reached through the token-managed Cloudflare tunnel, whose hostname routes live in the Cloudflare dashboard.
+6. **Public hostname.** `kart.openpak.org` is reached through the token-managed Cloudflare tunnel, whose hostname routes live in the Cloudflare dashboard.

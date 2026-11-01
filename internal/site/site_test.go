@@ -89,7 +89,7 @@ func TestPages(t *testing.T) {
 
 func TestShellMatchesOpenPak(t *testing.T) {
 	body := do(newSite(t, ""), "GET", "/", nil).Body.String()
-	for _, want := range []string{`class="top"`, `href="https://openpak.org/"`, `class="site-foot"`, `https://openpak.org/privacy`, `/static/base.css`} {
+	for _, want := range []string{`class="top"`, `href="https://openpak.org/"`, `class="site-foot"`, `https://openpak.org/privacy`, `/static/base.css`, `<a href="https://openpak.org/">Part of the OpenPak network</a>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell lacks %q", want)
 		}
