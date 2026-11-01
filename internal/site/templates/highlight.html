@@ -1,7 +1,7 @@
 {{define "page"}}{{template "head" .}}
 <p><a class="link-arrow" href="/highlights">All highlights</a></p>
 <div class="page-head"><h1>{{if .Data.Name}}{{.Data.Name}}{{else}}Highlight {{.Data.ID}}{{end}}</h1>
-<p>{{who .Player .Data.Owner}} · {{datetime .Data.Created}}</p></div>
+<p>{{who .Player .Game .Data.Owner ""}} · {{datetime .Data.Created}}</p></div>
 
 {{/* The video slot: shown only when the upload feature has stored a YouTube id. */}}
 {{with yt .Data.YouTubeID}}
@@ -13,7 +13,7 @@
 
 <h2>Details</h2>
 <dl class="card facts">
-  <dt>Player</dt><dd>{{who .Player .Data.Owner}}</dd>
+  <dt>Player</dt><dd>{{who .Player .Game .Data.Owner ""}}</dd>
   <dt>Uploaded</dt><dd>{{datetime .Data.Created}}</dd>
   <dt>Size</dt><dd>{{bytes .Data.Size}}</dd>
   {{if .Data.Rating}}<dt>Ratings</dt><dd>{{.Data.Rating.Count}} ({{.Data.Rating.Total}} total)</dd>{{end}}

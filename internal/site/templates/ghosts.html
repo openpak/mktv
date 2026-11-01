@@ -1,0 +1,8 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head"><h1>Ghosts</h1><p>Ghosts uploaded from the game, course by course. Download one to race against it.</p></div>
+{{range .Data}}
+<h2><a href="{{$.Game.Base}}/courses/{{.Course}}#ghosts">{{course $.Game .Course}}</a> <small class="muted">{{.Total}} ghost{{if ne .Total 1}}s{{end}}</small></h2>
+<ul class="card rows">{{range .Items}}<li><span class="name">{{who $.Player $.Game .Owner .Name}}</span><span class="sub">{{if .Time}}{{.Time}} · {{end}}{{bytes .Size}} · {{ago .Updated}}</span><a class="btn" href="{{$.Game.Base}}/media/{{.ID}}" download>Download ghost</a></li>{{end}}</ul>
+{{else}}{{template "empty" "No ghost has been uploaded yet."}}{{end}}
+{{if .Data}}<p class="hint">Ghost files are in the game's own format; they play back in {{.Game.Name}}, not in a browser.</p>{{end}}
+{{template "foot" .}}{{end}}

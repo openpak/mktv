@@ -1,31 +1,14 @@
 {{define "page"}}{{template "head" .}}
 <div class="page-head">
-  <p class="eyebrow">Mario Kart 8 · Wii U</p>
+  <p class="eyebrow">Mario Kart 8, 8 Deluxe, 7 and Wii</p>
   <h1>OpenKart</h1>
-  <p class="lede">Mario Kart 8 highlights, time-trial ghosts, course rankings and tournaments from the OpenPak network.</p>
+  <p class="lede">Rankings, ghosts and tournaments for Mario Kart on the OpenPak network. Pick your game.</p>
 </div>
-
-<ul class="stats card">
-  <li><b>{{.Data.Stats.Highlights}}</b><span>highlights</span></li>
-  <li><b>{{.Data.Stats.Courses}}</b><span>courses with times</span></li>
-  <li><b>{{.Data.Stats.Tournaments}}</b><span>tournaments</span></li>
-</ul>
-
-<h2>Latest highlights</h2>
-{{if .Data.Highlights}}
-<ul class="tiles">{{range .Data.Highlights}}{{template "tile" .}}{{end}}</ul>
-<p><a class="link-arrow" href="/highlights">All highlights</a></p>
-{{else}}<p class="card empty-card">No highlight has been uploaded yet. Highlight reels appear here once players on OpenPak publish them from the game.</p>{{end}}
-
-<h2>Courses</h2>
-{{if .Data.Courses}}
-<ul class="chips">{{range .Data.Courses}}<li><a class="chip sel" href="/courses/{{.Course}}">{{course .Course}} <small>{{.Ranked}} time{{if ne .Ranked 1}}s{{end}}</small></a></li>{{end}}</ul>
-{{else}}<p class="card empty-card">No time trial has been submitted yet.</p>{{end}}
-
-<h2>Tournaments</h2>
-{{if .Data.Tournament}}
-<ul class="card rows">{{range .Data.Tournament}}<li><a class="name" href="/tournaments/{{.ID}}">{{.Name}}</a><span class="sub">{{.Participants}} player{{if ne .Participants 1}}s{{end}} · {{ago .Created}}</span></li>{{end}}</ul>
-<p><a class="link-arrow" href="/tournaments">All tournaments</a></p>
-{{else}}<p class="card empty-card">No tournament has been created yet.</p>{{end}}
+<ul class="games">
+{{range .Games}}<li><a class="card game-card" href="{{.Home}}">
+  <span class="eyebrow">{{.Console}}</span>
+  <b>{{.Name}}</b>
+  <span class="muted">{{.Intro}}</span>
+</a></li>
+{{end}}</ul>
 {{template "foot" .}}{{end}}
-

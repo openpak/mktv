@@ -1,14 +1,18 @@
 {{define "page"}}{{template "head" .}}
 <div class="page-head"><h1>About this site</h1></div>
 <div class="legal">
-<p>OpenKart is OpenPak's own site for Mario Kart 8 on Wii U. It reads what the game uploaded to OpenPak's Mario Kart 8 server and shows it: Mario Kart TV highlights, time-trial ghosts, the ranking for each course, and community tournaments.</p>
+<p>OpenKart is OpenPak's own site for Mario Kart 8 (Wii U), Mario Kart 8 Deluxe (Switch), Mario Kart 7 (3DS) and Mario Kart Wii. It reads what each game uploaded to its OpenPak server and shows it: time-trial rankings for each course, ghosts you can download, and, where the game has them, community tournaments and Mario Kart TV highlights (Mario Kart 8 only).</p>
+<p>A game appears in the top bar once its server is connected to this site.</p>
+<h2>Your results</h2>
+<p>Sign in with your OpenPak account to see your own times. The site finds your player in each game from the consoles linked to your account on openpak.org; a game whose console is not linked says so, with a link to link it.</p>
 <h2>What it cannot show</h2>
 <ul>
 <li><b>Replays.</b> A highlight (the game's Mario Kart TV recording) is a recording the game replays with its own engine. Nothing outside the game can play it, so the site shows the details and thumbnail the game uploads with it, and a video if the player published one.</li>
-<li><b>Ghosts.</b> Ghost files can be downloaded but only play in the game.</li>
-<li><b>Names.</b> Players appear by player ID for now.</li>
+<li><b>Ghosts.</b> Ghost files can be downloaded but only play in their own game.</li>
+<li><b>Course names.</b> Mario Kart Wii courses are named. For the other games the number the game uses for a course is not yet matched to a course name, so those pages say "Course 7" and so on until it is confirmed on a console.</li>
+<li><b>Names.</b> Players appear by player ID unless the game stores a name (Mario Kart Wii does).</li>
 </ul>
 <h2>Source</h2>
-<p>Written for OpenPak, AGPL-3.0-only: <a href="https://github.com/openpak/mktv" rel="noopener">github.com/openpak/mktv</a>. It was written from public protocol documentation (NintendoClients by Kinnay, MIT) and shares no code with any other Mario Kart TV site.</p>
+<p>Written for OpenPak, AGPL-3.0-only: <a href="https://github.com/openpak/mktv" rel="noopener">github.com/openpak/mktv</a>. It was written from public protocol documentation (NintendoClients by Kinnay, MIT) and shares no code with any other Mario Kart TV site. Mario Kart is a trademark of Nintendo; OpenKart is not affiliated with or endorsed by Nintendo.</p>
 </div>
 {{template "foot" .}}{{end}}

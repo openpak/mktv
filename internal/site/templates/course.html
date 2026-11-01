@@ -1,20 +1,22 @@
 {{define "page"}}{{template "head" .}}
-<p><a class="link-arrow" href="/courses">All courses</a></p>
-<div class="page-head"><h1>{{course .Data.Course}}</h1><p>Time trial ranking, fastest first.</p></div>
+<p><a class="link-arrow" href="{{.Game.Base}}/courses">All courses</a></p>
+<div class="page-head"><h1>{{course .Game .Data.Course}}</h1><p>Time trial ranking, fastest first.</p></div>
 {{with .Data.Standing}}<p class="notice ok">Your time: <b>{{.Time}}</b> · rank {{.Rank}} of {{.Of}}</p>{{end}}
 
 <h2>Ranking</h2>
 {{if .Data.Ranks.Items}}
 <div class="table-wrap card"><table>
 <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Time</th><th scope="col">Set</th></tr></thead>
-<tbody>{{range .Data.Ranks.Items}}<tr{{if mine $.Player .Player}} class="me"{{end}}><td>{{.Rank}}</td><td>{{who $.Player .Player}}</td><td class="num"><b>{{.Time}}</b></td><td class="muted">{{ago .Updated}}</td></tr>{{end}}</tbody>
+<tbody>{{range .Data.Ranks.Items}}<tr{{if mine $.Player $.Game .Player}} class="me"{{end}}><td>{{.Rank}}</td><td>{{who $.Player $.Game .Player .Name}}</td><td class="num"><b>{{.Time}}</b></td><td class="muted">{{ago .Updated}}</td></tr>{{end}}</tbody>
 </table></div>
 {{template "pager" .Data.Pager}}
-{{else}}<p class="card empty-card">Nobody has set a time here yet.</p>{{end}}
+{{else}}{{template "empty" "Nobody has set a time here yet."}}{{end}}
 
-<h2>Ghosts</h2>
+{{if .Game.Ghosts}}
+<h2 id="ghosts">Ghosts</h2>
 {{if .Data.Ghosts.Items}}
-<ul class="card rows">{{range .Data.Ghosts.Items}}<li><span class="name">{{who $.Player .Owner}}</span><span class="sub">{{bytes .Size}} · {{ago .Updated}}</span><a class="btn" href="/media/{{.ID}}">Download ghost</a></li>{{end}}</ul>
-<p class="hint">Ghost files are in the game's own format; they play back in Mario Kart 8, not in a browser.</p>
-{{else}}<p class="card empty-card">No ghost has been uploaded for this course.</p>{{end}}
+<ul class="card rows">{{range .Data.Ghosts.Items}}<li><span class="name">{{who $.Player $.Game .Owner .Name}}</span><span class="sub">{{if .Time}}{{.Time}} · {{end}}{{bytes .Size}} · {{ago .Updated}}</span><a class="btn" href="{{$.Game.Base}}/media/{{.ID}}" download>Download ghost</a></li>{{end}}</ul>
+<p class="hint">Ghost files are in the game's own format; they play back in {{.Game.Name}}, not in a browser.</p>
+{{else}}{{template "empty" "No ghost has been uploaded for this course."}}{{end}}
+{{end}}
 {{template "foot" .}}{{end}}

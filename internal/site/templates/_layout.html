@@ -8,7 +8,11 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#e9ecf0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#24272d" media="(prefers-color-scheme: dark)">
-<meta name="description" content="OpenKart shows Mario Kart 8 highlights, time-trial ghosts, course rankings and tournaments from OpenPak.">
+<meta name="description" content="{{.Desc}}">
+<meta property="og:site_name" content="OpenKart">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{.Title}} · OpenKart">
+<meta property="og:description" content="{{.Desc}}">
 <title>{{.Title}} · OpenKart</title>
 <link rel="icon" href="/static/openkart.svg" type="image/svg+xml">
 <link rel="icon" href="/static/favicon-32.png" sizes="32x32" type="image/png">
@@ -21,11 +25,9 @@
 <header class="top">
   <div class="wrap">
     <a href="/" class="brand"><img src="/static/openkart.svg" alt="" width="32" height="32">OpenKart</a>
-    <nav aria-label="OpenKart" class="navlinks">
-      <a href="/highlights" {{if eq .Path "/highlights"}}aria-current="page"{{end}}>Highlights</a>
-      <a href="/courses" {{if eq .Path "/courses"}}aria-current="page"{{end}}>Courses</a>
-      <a href="/tournaments" {{if eq .Path "/tournaments"}}aria-current="page"{{end}}>Tournaments</a>
-      {{if .Player}}<a href="/me" {{if eq .Path "/me"}}aria-current="page"{{end}}>Your results</a>{{end}}
+    <nav aria-label="Games" class="navlinks">
+      {{range .Games}}<a href="{{.Home}}" title="{{.Name}}" {{if eq $.Game .}}aria-current="page"{{end}}>{{.Console}}</a>
+      {{end}}{{if .Player}}<a href="/me" {{if eq .Path "/me"}}aria-current="page"{{end}}>Your results</a>{{end}}
     </nav>
     {{if .SignIn}}<div class="ml-auto">
       {{if .Player}}
@@ -38,6 +40,14 @@
   </div>
 </header>
 <main id="main" class="wrap pt-6">
+{{with .Game}}<nav class="subnav" aria-label="{{.Name}}">
+  <span class="subnav-title">{{.Name}}</span>
+  <a href="{{.Home}}" {{if eq $.Path .Home}}aria-current="page"{{end}}>Overview</a>
+  {{if .Highlights}}<a href="{{.Base}}/highlights" {{if active $.Path (print .Base "/highlights")}}aria-current="page"{{end}}>Highlights</a>{{end}}
+  <a href="{{.Base}}/courses" {{if active $.Path (print .Base "/courses")}}aria-current="page"{{end}}>Courses</a>
+  {{if .Ghosts}}<a href="{{.Base}}/ghosts" {{if active $.Path (print .Base "/ghosts")}}aria-current="page"{{end}}>Ghosts</a>{{end}}
+  {{if .Tournaments}}<a href="{{.Base}}/tournaments" {{if active $.Path (print .Base "/tournaments")}}aria-current="page"{{end}}>{{.TournamentsLabel}}</a>{{end}}
+</nav>{{end}}
 {{end}}
 
 {{define "foot"}}
@@ -46,7 +56,7 @@
   <div class="wrap">
     <div>
       <a href="/" class="brand"><img src="/static/openkart.svg" alt="" width="28" height="28">OpenKart</a>
-      <p class="muted" style="max-width:24rem;font-size:.9rem;margin-top:.75rem">An open network for the consoles you already own. OpenKart is OpenPak's own site for Mario Kart 8 on Wii U: highlights, ghosts, rankings and tournaments.</p>
+      <p class="muted" style="max-width:24rem;font-size:.9rem;margin-top:.75rem">An open network for the consoles you already own. OpenKart is OpenPak's own site for Mario Kart 8, 8 Deluxe, 7 and Wii: rankings, ghosts and tournaments.</p>
     </div>
     <nav aria-labelledby="foot-net"><h2 id="foot-net">OpenPak</h2><ul>
       <li><a href="{{.OpenPak}}/">Home</a></li>
@@ -55,10 +65,9 @@
       <li><a href="{{.OpenPak}}/status">Status</a></li>
     </ul></nav>
     <nav aria-labelledby="foot-mk"><h2 id="foot-mk">OpenKart</h2><ul>
-      <li><a href="/highlights">Highlights</a></li>
-      <li><a href="/courses">Courses</a></li>
-      <li><a href="/tournaments">Tournaments</a></li>
-      <li><a href="/about">About</a></li>
+      <li><a href="/">Games</a></li>
+      {{range .Games}}<li><a href="{{.Home}}">{{.Name}}</a></li>
+      {{end}}<li><a href="/about">About</a></li>
     </ul></nav>
     <nav aria-labelledby="foot-proj"><h2 id="foot-proj">Project</h2><ul>
       <li><a href="https://github.com/openpak/mktv" rel="noopener">Source</a></li>
@@ -80,8 +89,13 @@
 
 {{define "tile"}}<li><a class="tile sel" href="/highlights/{{.ID}}">
   {{if .Thumbnail}}<img src="/media/{{.Thumbnail}}" alt="" loading="lazy" width="320" height="180">{{else}}<span class="nothumb" aria-hidden="true">TV</span>{{end}}
-  <span class="cap"><b>{{if .Name}}{{.Name}}{{else}}Highlight {{.ID}}{{end}}</b><span>{{who nil .Owner}} · {{ago .Created}}</span></span>
+  <span class="cap"><b>{{if .Name}}{{.Name}}{{else}}Highlight {{.ID}}{{end}}</b><span>Player {{.Owner}} · {{ago .Created}}</span></span>
 </a></li>{{end}}
+
+{{/* One empty state for every list on every page. */}}
+{{define "empty"}}<p class="card empty-card">{{.}}</p>{{end}}
+
+{{define "unlinked"}}<p class="card empty-card">This OpenPak account has no {{.Game.Console}} linked, so there are no {{.Game.Name}} results to show. <a href="{{.OpenPak}}/account">Link your {{.Game.Console}} on openpak.org</a>, then sign in here again.</p>{{end}}
 
 {{define "pager"}}{{if gt .Pages 1}}<nav class="pager" aria-label="Pages">
   {{if .Prev}}<a class="btn" href="{{.Prev}}">Newer</a>{{end}}<span>Page {{.Page}} of {{.Pages}}</span>{{if .Next}}<a class="btn" href="{{.Next}}">Older</a>{{end}}

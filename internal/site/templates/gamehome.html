@@ -1,0 +1,35 @@
+{{define "page"}}{{template "head" .}}
+<div class="page-head">
+  <p class="eyebrow">{{.Game.Console}}</p>
+  <h1>{{.Game.Name}}</h1>
+  <p class="lede">{{.Game.Intro}}</p>
+</div>
+
+<ul class="stats card">
+  {{if .Game.Highlights}}<li><b>{{.Data.Stats.Highlights}}</b><span>{{plural .Data.Stats.Highlights "highlight" "highlights"}}</span></li>{{end}}
+  <li><b>{{.Data.Stats.Ranked}}</b><span>of {{.Game.Count}} courses with times</span></li>
+  <li><b>{{.Data.Stats.Ghosts}}</b><span>{{plural .Data.Stats.Ghosts "ghost" "ghosts"}}</span></li>
+  {{if .Game.Tournaments}}<li><b>{{.Data.Stats.Tournaments}}</b><span>{{if eq .Game.TournamentsLabel "Communities"}}{{plural .Data.Stats.Tournaments "community" "communities"}}{{else}}{{plural .Data.Stats.Tournaments "tournament" "tournaments"}}{{end}}</span></li>{{end}}
+</ul>
+
+{{if .Game.Highlights}}
+<h2>Latest highlights</h2>
+{{if .Data.Highlights}}
+<ul class="tiles">{{range .Data.Highlights}}{{template "tile" .}}{{end}}</ul>
+<p><a class="link-arrow" href="{{.Game.Base}}/highlights">All highlights</a></p>
+{{else}}{{template "empty" "No highlight has been uploaded yet. Highlight reels appear here once players on OpenPak publish them from the game."}}{{end}}
+{{end}}
+
+<h2>Courses</h2>
+{{if .Data.Courses}}
+<ul class="chips">{{range .Data.Courses}}<li><a class="chip sel" href="{{$.Game.Base}}/courses/{{.Course}}">{{course $.Game .Course}} <small>{{.Ranked}} time{{if ne .Ranked 1}}s{{end}}</small></a></li>{{end}}</ul>
+{{else}}{{template "empty" "No time trial has been submitted yet."}}{{end}}
+
+{{if .Game.Tournaments}}
+<h2>{{.Game.TournamentsLabel}}</h2>
+{{if .Data.Tournaments}}
+<ul class="card rows">{{range .Data.Tournaments}}<li><a class="name" href="{{$.Game.Base}}/tournaments/{{.ID}}">{{.Name}}</a><span class="sub">{{.Participants}} player{{if ne .Participants 1}}s{{end}} · {{ago .Created}}</span></li>{{end}}</ul>
+<p><a class="link-arrow" href="{{.Game.Base}}/tournaments">All {{if eq .Game.TournamentsLabel "Communities"}}communities{{else}}tournaments{{end}}</a></p>
+{{else}}{{template "empty" (print "Nothing has been created here yet.")}}{{end}}
+{{end}}
+{{template "foot" .}}{{end}}

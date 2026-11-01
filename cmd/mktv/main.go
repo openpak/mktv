@@ -21,6 +21,6 @@ func main() {
 	}
 	srv := &http.Server{Addr: cfg.Addr, Handler: h, ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
-	log.Printf("mktv: listening on %s, API %s", cfg.Addr, cfg.APIURL)
+	log.Printf("mktv: listening on %s", cfg.Addr)
 	log.Fatal(srv.ListenAndServe())
 }

@@ -17,34 +17,69 @@ const (
 )
 
 // fakeAPI answers like the mario-kart-8 read API.
-func fakeAPI(t *testing.T) *httptest.Server {
+func fakeAPI(t *testing.T) *httptest.Server { return fakeGameAPI(t, "/api/v1", "") }
+
+// fakeGameAPI serves the contract under prefix; with a key it refuses requests without the header.
+func fakeGameAPI(t *testing.T, prefix, key string) *httptest.Server {
 	t.Helper()
+	inner := http.NewServeMux()
 	mux := http.NewServeMux()
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if key != "" && r.Header.Get("X-WFC-Internal-Key") != key {
+			w.WriteHeader(403)
+			return
+		}
+		inner.ServeHTTP(w, r)
+	}))
+	_ = mux
 	j := func(body string) http.HandlerFunc {
 		return func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte(body)) }
 	}
-	mux.HandleFunc("/api/v1/mktv", j(hlJSON))
-	mux.HandleFunc("/api/v1/objects/7", j(hl2JSON))
-	mux.HandleFunc("/api/v1/objects/9", j(strings.Replace(hl2JSON, `"youtube_id":"dQw4w9WgXcQ"`, `"youtube_id":"\"><script>"`, 1)))
-	mux.HandleFunc("/api/v1/objects/10", j(strings.Replace(hl2JSON, `"youtube_id":"dQw4w9WgXcQ",`, ``, 1)))
-	mux.HandleFunc("/api/v1/objects/8/body", func(w http.ResponseWriter, _ *http.Request) {
+	inner.HandleFunc(prefix+"/mktv", j(hlJSON))
+	inner.HandleFunc(prefix+"/objects/7", j(hl2JSON))
+	inner.HandleFunc(prefix+"/objects/9", j(strings.Replace(hl2JSON, `"youtube_id":"dQw4w9WgXcQ"`, `"youtube_id":"\"><script>"`, 1)))
+	inner.HandleFunc(prefix+"/objects/10", j(strings.Replace(hl2JSON, `"youtube_id":"dQw4w9WgXcQ",`, ``, 1)))
+	inner.HandleFunc(prefix+"/objects/8/body", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Write([]byte("\x89PNG"))
 	})
-	mux.HandleFunc("/api/v1/courses", j(`{"items":[{"course":4,"ranked":2,"ghosts":1}]}`))
-	mux.HandleFunc("/api/v1/courses/4/rankings", j(`{"total":2,"offset":0,"limit":20,"items":[{"rank":1,"player":"1800000005","time_ms":80000,"time":"1:20.000","updated":"2026-10-30T12:00:00Z"},{"rank":2,"player":"1800000006","time_ms":90000,"time":"1:30.000","updated":"2026-10-30T12:00:00Z"}]}`))
-	mux.HandleFunc("/api/v1/courses/4/ghosts", j(`{"total":1,"offset":0,"limit":10,"items":[{"id":3,"owner":"1800000006","size":900,"data_type":4,"tags":[],"created":"2026-10-30T12:00:00Z","updated":"2026-10-30T12:00:00Z"}]}`))
-	mux.HandleFunc("/api/v1/players/1800000005/rankings", j(`{"items":[{"course":4,"rank":1,"of":2,"time":"1:20.000"}]}`))
-	mux.HandleFunc("/api/v1/tournaments", j(`{"total":1,"offset":0,"limit":5,"items":[{"id":20000,"owner":"1800000005","name":"Cup <b>","community_code":"111122223333","participants":2,"season":1,"created":"2026-10-30T12:00:00Z"}]}`))
-	mux.HandleFunc("/api/v1/tournaments/20000", j(`{"id":20000,"owner":"1800000005","name":"Cup","community_code":"111122223333","participants":2,"season":2,"created":"2026-10-30T12:00:00Z","scores":[{"rank":1,"player":"1800000006","score":30,"updated":"2026-10-30T12:00:00Z"}]}`))
+	inner.HandleFunc(prefix+"/courses", j(`{"items":[{"course":4,"ranked":2,"ghosts":1}]}`))
+	inner.HandleFunc(prefix+"/courses/4/rankings", j(`{"total":2,"offset":0,"limit":20,"items":[{"rank":1,"player":"1800000005","time_ms":80000,"time":"1:20.000","updated":"2026-10-30T12:00:00Z"},{"rank":2,"player":"1800000006","time_ms":90000,"time":"1:30.000","updated":"2026-10-30T12:00:00Z"}]}`))
+	inner.HandleFunc(prefix+"/courses/4/ghosts", j(`{"total":1,"offset":0,"limit":10,"items":[{"id":3,"owner":"1800000006","size":900,"data_type":4,"time":"1:30.000","tags":[],"created":"2026-10-30T12:00:00Z","updated":"2026-10-30T12:00:00Z"}]}`))
+	inner.HandleFunc(prefix+"/players/{pid}/rankings", func(w http.ResponseWriter, r *http.Request) {
+		switch r.PathValue("pid") {
+		case "1800000005", "12297829382472990721", "8899001122":
+			w.Write([]byte(`{"items":[{"course":4,"rank":1,"of":2,"time":"1:20.000"}]}`))
+		default:
+			w.Write([]byte(`{"items":[]}`))
+		}
+	})
+	inner.HandleFunc(prefix+"/objects/3/body", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<script>GHOST"))
+	})
+	inner.HandleFunc(prefix+"/tournaments", j(`{"total":1,"offset":0,"limit":5,"items":[{"id":20000,"owner":"1800000005","name":"Cup <b>","community_code":"111122223333","participants":2,"season":1,"created":"2026-10-30T12:00:00Z"}]}`))
+	inner.HandleFunc(prefix+"/tournaments/20000", j(`{"id":20000,"owner":"1800000005","name":"Cup","community_code":"111122223333","participants":2,"season":2,"created":"2026-10-30T12:00:00Z","scores":[{"rank":1,"player":"1800000006","score":30,"updated":"2026-10-30T12:00:00Z"}]}`))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
 }
 
+const mkwKey = "k-test-key"
+
+func testConfig(t *testing.T) Config {
+	t.Helper()
+	return Config{Addr: ":0", APIURL: fakeAPI(t).URL, MK8DURL: fakeAPI(t).URL, MK7URL: fakeAPI(t).URL,
+		MKWURL: fakeGameAPI(t, "/api/mkw/v1", mkwKey).URL, MKWKey: mkwKey, CoursesFiles: map[string]string{}}
+}
+
 func newSite(t *testing.T, core string) *Site {
 	t.Helper()
-	cfg := Config{Addr: ":0", APIURL: fakeAPI(t).URL, PublicURL: "https://mktv.test", OpenPakURL: "https://openpak.org", CoreURL: core, SessionKey: strings.Repeat("k", 32)}
+	cfg := testConfig(t)
+	cfg.PublicURL = "https://mktv.test"
+	cfg.OpenPakURL = "https://openpak.org"
+	cfg.CoreURL = core
+	cfg.SessionKey = strings.Repeat("k", 32)
 	s, err := New(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +106,8 @@ func do(s http.Handler, method, path string, form url.Values, cookies ...*http.C
 func TestPages(t *testing.T) {
 	s := newSite(t, "")
 	for path, want := range map[string]string{
-		"/":                  "Wild one",
+		"/":                  "Mario Kart 8 Deluxe",
+		"/mk8":               "Wild one",
 		"/highlights":        "Wild one",
 		"/courses":           "Course 4",
 		"/courses/4":         "1:30.000",
@@ -121,7 +157,7 @@ func TestMediaAndNotFound(t *testing.T) {
 	if w.Code != 200 || w.Header().Get("Content-Type") != "image/png" {
 		t.Errorf("media: %d %q", w.Code, w.Header().Get("Content-Type"))
 	}
-	for _, p := range []string{"/media/99", "/media/x", "/highlights/x", "/courses/abc", "/tournaments/1?season=0", "/nope"} {
+	for _, p := range []string{"/media/99", "/media/x", "/highlights/x", "/courses/abc", "/mk8d/highlights", "/mkw/tournaments", "/mkw/media/99", "/tournaments/1?season=0", "/nope"} {
 		if c := do(s, "GET", p, nil).Code; c != 404 {
 			t.Errorf("%s: %d", p, c)
 		}
@@ -137,9 +173,16 @@ func TestSecurityHeaders(t *testing.T) {
 
 func TestUpstreamDown(t *testing.T) {
 	s := newSite(t, "")
-	s.api.base = "http://127.0.0.1:1"
-	if c := do(s, "GET", "/", nil).Code; c != 503 {
-		t.Fatalf("code %d", c)
+	s.games[0].api.base = "http://127.0.0.1:1"
+	w := do(s, "GET", "/mk8", nil)
+	if w.Code != 503 || !strings.Contains(w.Body.String(), "Mario Kart 8 is not answering right now") || strings.Contains(w.Body.String(), "127.0.0.1") {
+		t.Fatalf("code %d %s", w.Code, w.Body)
+	}
+	if c := do(s, "GET", "/", nil).Code; c != 200 {
+		t.Fatalf("the home page must not depend on a game server: %d", c)
+	}
+	if c := do(s, "GET", "/mk7", nil).Code; c != 200 {
+		t.Fatalf("one game being down must not take another down: %d", c)
 	}
 }
 
@@ -151,6 +194,7 @@ type fakeSSO struct {
 	form      url.Values
 	challenge string // set by the test from the authorize redirect
 	pid       string // JSON for wiiu_pid
+	extra     string // more JSON members, e.g. `,"switch_pid":"123"`
 	fail      bool
 }
 
@@ -169,7 +213,7 @@ func newFakeSSO(t *testing.T) *fakeSSO {
 			w.Write([]byte(`{"error":"invalid_grant"}`))
 			return
 		}
-		fmt.Fprintf(w, `{"account_id":"acc-1","display_name":"Mario","wiiu_pid":%s}`, f.pid)
+		fmt.Fprintf(w, `{"account_id":"acc-1","display_name":"Mario","wiiu_pid":%s%s}`, f.pid, f.extra)
 	}))
 	t.Cleanup(f.srv.Close)
 	return f
@@ -177,8 +221,9 @@ func newFakeSSO(t *testing.T) *fakeSSO {
 
 func newSSOSite(t *testing.T, f *fakeSSO) *Site {
 	t.Helper()
-	cfg := Config{Addr: ":0", APIURL: fakeAPI(t).URL, PublicURL: "https://mktv.test", OpenPakURL: "https://openpak.org",
-		CoreURL: f.srv.URL, SSOSecret: "s3cret", SessionKey: strings.Repeat("k", 32)}
+	cfg := testConfig(t)
+	cfg.PublicURL, cfg.OpenPakURL = "https://mktv.test", "https://openpak.org"
+	cfg.CoreURL, cfg.SSOSecret, cfg.SessionKey = f.srv.URL, "s3cret", strings.Repeat("k", 32)
 	s, err := New(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -354,7 +399,7 @@ func TestNoWiiULinked(t *testing.T) {
 		}
 	}
 	body := do(s, "GET", "/me", nil, sess).Body.String()
-	if !strings.Contains(body, "no Wii U linked") || !strings.Contains(body, `href="https://openpak.org/link"`) || strings.Contains(body, "Your times") {
+	if !strings.Contains(body, "no Wii U linked") || !strings.Contains(body, `href="https://openpak.org/account"`) || strings.Contains(body, "Your times") {
 		t.Errorf("me without a Wii U: %s", body)
 	}
 }
@@ -378,7 +423,7 @@ func TestLocalPath(t *testing.T) {
 func TestConfig(t *testing.T) {
 	env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
 	if _, err := ConfigFromEnv(env(nil)); err == nil {
-		t.Error("API URL is required")
+		t.Error("at least one game is required")
 	}
 	if _, err := ConfigFromEnv(env(map[string]string{"MKTV_API_URL": "http://x:1", "MKTV_CORE_URL": "http://c", "SSO_CLIENT_OPENKART_SECRET": "x", "MKTV_SESSION_KEY": "short"})); err == nil {
 		t.Error("a short session key must be refused when sign-in is on")

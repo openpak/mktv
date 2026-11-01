@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -99,7 +98,7 @@ func (s *Site) authCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Site) signInFailed(w http.ResponseWriter, r *http.Request, status int) {
-	s.render(w, r, status, "error", "Sign-in", "Signing in did not finish. Go back and press Sign in to try again.")
+	s.render(w, r, nil, status, "error", "Sign-in", "Signing in did not finish. Go back and press Sign in to try again.")
 }
 
 var errExchange = errors.New("token exchange refused")
@@ -128,18 +127,41 @@ func (s *Site) exchange(ctx context.Context, code, verifier string) (Player, err
 		return Player{}, errors.Join(errExchange, errors.New(resp.Status))
 	}
 	var t struct {
-		AccountID   string      `json:"account_id"`
-		DisplayName string      `json:"display_name"`
-		WiiUPID     json.Number `json:"wiiu_pid"`
+		AccountID   string          `json:"account_id"`
+		DisplayName string          `json:"display_name"`
+		WiiUPID     json.RawMessage `json:"wiiu_pid"`
+		N3DSPID     json.RawMessage `json:"n3ds_pid"`
+		SwitchPID   json.RawMessage `json:"switch_pid"`
+		WFCUserID   json.RawMessage `json:"wfc_user_id"`
 	}
 	if err := json.Unmarshal(body, &t); err != nil || t.AccountID == "" {
 		return Player{}, errors.Join(errExchange, errors.New("unreadable answer"))
 	}
-	p := Player{Account: t.AccountID, Name: t.DisplayName}
-	if n, err := strconv.ParseInt(t.WiiUPID.String(), 10, 64); err == nil && n > 0 {
-		p.PID = strconv.FormatInt(n, 10)
+	name := []rune(t.DisplayName)
+	if len(name) > 64 {
+		name = name[:64]
 	}
-	return p, nil
+	return Player{Account: t.AccountID, Name: string(name), PID: playerID(t.WiiUPID), N3DS: playerID(t.N3DSPID),
+		SwitchPID: playerID(t.SwitchPID), WFCUserID: playerID(t.WFCUserID)}, nil
+}
+
+// playerID reads an optional id that may arrive as a JSON string or number (null, empty or
+// anything that is not a positive decimal number means "not linked"). Ids are kept as text: a
+// Switch principal id does not fit a float.
+func playerID(raw json.RawMessage) string {
+	v := strings.Trim(strings.TrimSpace(string(raw)), `"`)
+	if v == "" || v == "null" || len(v) > 20 {
+		return ""
+	}
+	for _, r := range v {
+		if r < '0' || r > '9' {
+			return ""
+		}
+	}
+	if strings.Trim(v, "0") == "" {
+		return ""
+	}
+	return v
 }
 
 // authLogout ends this site's session only and returns to the home page. openpak.org stays
@@ -152,34 +174,4 @@ func (s *Site) authLogout(w http.ResponseWriter, r *http.Request) {
 	noStore(w)
 	s.clearSession(w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-type meData struct {
-	Ranks      []PlayerRank
-	Highlights Page[Object]
-}
-
-// me is "Your results": the signed-in player's times and highlights, by Wii U player ID.
-func (s *Site) me(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.player(r)
-	if !ok {
-		http.Redirect(w, r, "/auth/login?next=/me", http.StatusSeeOther)
-		return
-	}
-	if p.PID == "" {
-		s.render(w, r, 200, "me", "Your results", meData{})
-		return
-	}
-	ctx := r.Context()
-	rk, err := get[struct{ Items []PlayerRank }](ctx, s.api, "/api/v1/players/"+p.PID+"/rankings")
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	hl, err := get[Page[Object]](ctx, s.api, "/api/v1/mktv?"+q(20, 0, p.PID))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "me", "Your results", meData{rk.Items, hl})
 }

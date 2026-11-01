@@ -1,5 +1,19 @@
 # Changelog — OpenKart (mktv)
 
+## v0.3.0 — 2026-11-01
+
+- Four games: Mario Kart 8 (Wii U), Mario Kart 8 Deluxe (Switch), Mario Kart 7 (3DS) and Mario Kart Wii. A game switcher in the top bar (Wii U, Switch, 3DS, Wii), a section bar per game, game cards on the home page and a home page per game with counts. Mario Kart 8 keeps `/highlights`, `/courses`, `/tournaments`, `/me`; the others live under `/mk8d/`, `/mk7/`, `/mkw/`
+- A game with no API address is not offered; a game whose server does not answer shows a friendly "not answering right now" page, and the other games stay up
+- New Ghosts section (`/ghosts`, `/{game}/ghosts`) with a download button; ghost files are always served as an attachment
+- Tournaments for Mario Kart 8, 8 Deluxe and 7 (communities there); none for Wii
+- "Your results" covers every game: Wii U PID (Mario Kart 8), 3DS PID (Mario Kart 7; `n3ds_pid` if present, else the Wii U PID, which is the same PNID), Switch id (8 Deluxe), Wii console user id (Mario Kart Wii). A game with no linked console says so, with a link to openpak.org
+- The session cookie carries `wiiu_pid`, `n3ds_pid`, `switch_pid`, `wfc_user_id` (all optional, strings or numbers) and stays under 400 bytes
+- Course names: Mario Kart Wii is named (wfc-common order); the other games stay "Course N" until the ranking category mapping is confirmed on a console (docs/gaps.md)
+- Mario Kart Wii: `/api/mkw/v1/...` with the internal key header
+- New env: `MKTV_MK8D_API_URL`, `MKTV_MK7_API_URL`, `MKTV_MKW_API_URL`, `MKTV_MKW_API_KEY`, `MKTV_<GAME>_COURSES_FILE`. `MKTV_API_URL` (Mario Kart 8) is now optional; at least one game is needed
+- Description, about page and footer text name the four games
+- Friendly 404 page for unknown addresses
+
 ## v0.2.3 — 2026-11-01
 
 - Sign out ends only this site's session and returns to the home page; it no longer goes through openpak.org's "Sign out of OpenPak?" page, and openpak.org stays signed in. The next Sign in may sign straight back in while openpak.org is signed in

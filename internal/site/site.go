@@ -26,37 +26,62 @@ const pageSize = 20
 
 // Site is the http.Handler of kart.openpak.org.
 type Site struct {
-	cfg     Config
-	api     *apiClient
-	sso     *http.Client
-	courses map[int]string
-	pages   map[string]*template.Template
-	mux     *http.ServeMux
-	asset   string
+	cfg   Config
+	games []*Game // the games that have an API address, in switcher order
+	sso   *http.Client
+	pages map[string]*template.Template
+	mux   *http.ServeMux
+	asset string
 }
 
 // New builds the site. It does not touch the network.
 func New(cfg Config) (*Site, error) {
-	s := &Site{cfg: cfg, api: newAPIClient(cfg.APIURL), courses: map[int]string{}, sso: &http.Client{Timeout: 10 * time.Second},
-		asset: strconv.FormatInt(time.Now().Unix(), 36)}
-	if cfg.CoursesFile != "" {
-		b, err := os.ReadFile(cfg.CoursesFile)
-		if err != nil {
-			return nil, err
+	s := &Site{cfg: cfg, sso: &http.Client{Timeout: 10 * time.Second}, asset: strconv.FormatInt(time.Now().Unix(), 36)}
+	urls := map[string]string{"mk8": cfg.APIURL, "mk8d": cfg.MK8DURL, "mk7": cfg.MK7URL, "mkw": cfg.MKWURL}
+	for _, d := range gameDefs() {
+		if urls[d.Slug] == "" {
+			continue
 		}
-		s.courses = parseCourses(string(b))
+		g := d.Game
+		key := ""
+		if g.Slug == "mkw" {
+			key = cfg.MKWKey
+		}
+		g.api = newAPIClient(urls[g.Slug], d.prefix, key)
+		if f := cfg.CoursesFiles[g.Slug]; f != "" {
+			b, err := os.ReadFile(f)
+			if err != nil {
+				return nil, err
+			}
+			g.names = parseCourses(string(b))
+		}
+		s.games = append(s.games, &g)
+	}
+	if len(s.games) == 0 {
+		return nil, fmt.Errorf("no game is configured")
 	}
 	funcs := template.FuncMap{
-		"course":   s.courseName,
+		"course":   func(g *Game, n int) string { return g.CourseName(n) },
 		"ago":      ago,
 		"date":     func(t time.Time) string { return t.UTC().Format("2006-01-02") },
 		"datetime": func(t time.Time) string { return t.UTC().Format("2006-01-02 15:04 UTC") },
 		"bytes":    humanBytes,
 		"yt":       youtubeEmbed,
 		"add":      func(a int64, b int) int64 { return a + int64(b) },
-		"mine":     func(p *Player, pid string) bool { return p != nil && p.PID != "" && p.PID == pid },
-		"who":      func(p *Player, pid string) string { return who(p, pid) },
-		"pages":    pager,
+		"mine":     func(p *Player, g *Game, pid string) bool { return mine(p, g, pid) },
+		"who":      func(p *Player, g *Game, pid, name string) string { return who(p, g, pid, name) },
+		"active":   func(path, href string) bool { return path == href || strings.HasPrefix(path, href+"/") },
+		"plural":   plural,
+		"link": func(g *Game, openpak string) struct {
+			Game    *Game
+			OpenPak string
+		} {
+			return struct {
+				Game    *Game
+				OpenPak string
+			}{g, openpak}
+		},
+		"pages": pager,
 	}
 	layout, err := templateFS.ReadFile("templates/_layout.html")
 	if err != nil {
@@ -83,13 +108,10 @@ func New(cfg Config) (*Site, error) {
 	static := http.StripPrefix("/static/", http.FileServerFS(sub))
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("GET /{$}", s.home)
-	s.mux.HandleFunc("GET /highlights", s.highlights)
-	s.mux.HandleFunc("GET /highlights/{id}", s.highlight)
-	s.mux.HandleFunc("GET /courses", s.courseList)
-	s.mux.HandleFunc("GET /courses/{course}", s.courseView)
-	s.mux.HandleFunc("GET /tournaments", s.tournaments)
-	s.mux.HandleFunc("GET /tournaments/{id}", s.tournament)
-	s.mux.HandleFunc("GET /media/{id}", s.media)
+	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { s.fail(w, r, nil, errNotFound) })
+	for _, g := range s.games {
+		s.routes(g)
+	}
 	s.mux.HandleFunc("GET /about", s.about)
 	s.mux.HandleFunc("GET /me", s.me)
 	s.mux.HandleFunc("GET /auth/login", s.authLogin)
@@ -120,15 +142,19 @@ type view struct {
 	Contact  string
 	SignIn   bool // sign-in is configured
 	Player   *Player
+	Game     *Game   // the game this page is about; nil on site-wide pages
+	Games    []*Game // every offered game, for the switcher
+	Desc     string
 	Err      string
 	Flash    string
 	Data     any
 	NotFound bool
 }
 
-func (s *Site) render(w http.ResponseWriter, r *http.Request, status int, name, title string, data any) {
-	v := view{Title: title, Path: r.URL.Path, Asset: s.asset, OpenPak: s.cfg.OpenPakURL, Contact: s.cfg.ContactEmail,
+func (s *Site) render(w http.ResponseWriter, r *http.Request, g *Game, status int, name, title string, data any) {
+	v := view{Game: g, Games: s.games, Title: title, Path: r.URL.Path, Asset: s.asset, OpenPak: s.cfg.OpenPakURL, Contact: s.cfg.ContactEmail,
 		SignIn: s.signInOn(), Data: data}
+	v.Desc = s.describe(g)
 	if p, ok := s.player(r); ok {
 		v.Player = &p
 	}
@@ -144,14 +170,27 @@ func (s *Site) render(w http.ResponseWriter, r *http.Request, status int, name, 
 	_, _ = w.Write(buf.Bytes())
 }
 
-// fail answers an upstream error: 404 for a missing thing, a plain 503 page otherwise.
-func (s *Site) fail(w http.ResponseWriter, r *http.Request, err error) {
+// fail answers an upstream error: 404 for a missing thing, a friendly 503 page when the game's
+// server does not answer. Nothing of the error reaches the visitor; it goes to the log.
+func (s *Site) fail(w http.ResponseWriter, r *http.Request, g *Game, err error) {
 	if errors.Is(err, errNotFound) {
-		s.render(w, r, http.StatusNotFound, "error", "Not found", "That page does not exist, or the thing it showed is gone.")
+		s.render(w, r, g, http.StatusNotFound, "error", "Not found", "That page does not exist, or the thing it showed is gone.")
 		return
 	}
 	log.Printf("mktv: %s: %v", r.URL.Path, err)
-	s.render(w, r, http.StatusServiceUnavailable, "error", "Unavailable", "Mario Kart 8's server did not answer. Try again in a minute.")
+	name := "The game"
+	if g != nil {
+		name = g.Name
+	}
+	s.render(w, r, g, http.StatusServiceUnavailable, "error", "Temporarily unavailable", name+" is not answering right now. Try again in a minute.")
+}
+
+// describe is the meta description: nominative, naming the games this site shows.
+func (s *Site) describe(g *Game) string {
+	if g != nil {
+		return "OpenKart shows " + g.Name + " time-trial rankings and ghosts from OpenPak."
+	}
+	return "OpenKart shows rankings, ghosts and tournaments for Mario Kart 8, 8 Deluxe, 7 and Wii from OpenPak."
 }
 
 func pageParam(r *http.Request) int {
@@ -203,18 +242,30 @@ func parseCourses(s string) map[int]string {
 	return out
 }
 
-func (s *Site) courseName(n int) string {
-	if name, ok := s.courses[n]; ok {
-		return name
+func mine(p *Player, g *Game, id string) bool {
+	if p == nil || g == nil || id == "" {
+		return false
 	}
-	return "Course " + strconv.Itoa(n)
+	return g.Identity(p) == id
 }
 
-func who(p *Player, pid string) string {
-	if p != nil && p.PID != "" && p.PID == pid {
+// who is how a player is named in a list: the visitor as "You (name)", others by the name the
+// game stored, else by player id.
+func who(p *Player, g *Game, id, name string) string {
+	switch {
+	case mine(p, g, id):
 		return "You (" + p.Display() + ")"
+	case name != "":
+		return name
 	}
-	return "Player " + pid
+	return "Player " + id
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
 }
 
 var ytID = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
@@ -251,181 +302,4 @@ func humanBytes(n int64) string {
 		return fmt.Sprintf("%.1f KiB", float64(n)/(1<<10))
 	}
 	return fmt.Sprintf("%d B", n)
-}
-
-// --- pages ---
-
-type homeData struct {
-	Highlights []Object
-	Courses    []Course
-	Tournament []Tournament
-	Ghosts     int
-	Stats      struct{ Highlights, Courses, Tournaments int }
-}
-
-func (s *Site) home(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	hl, err := get[Page[Object]](ctx, s.api, "/api/v1/mktv?"+q(6, 0, ""))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	cs, err := get[struct{ Items []Course }](ctx, s.api, "/api/v1/courses")
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	ts, err := get[Page[Tournament]](ctx, s.api, "/api/v1/tournaments?"+q(5, 0, ""))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	d := homeData{Highlights: hl.Items, Courses: cs.Items, Tournament: ts.Items}
-	d.Stats.Highlights, d.Stats.Courses, d.Stats.Tournaments = hl.Total, len(cs.Items), ts.Total
-	s.render(w, r, 200, "home", "Home", d)
-}
-
-type listData struct {
-	Items []Object
-	Total int
-	Pager Pager
-}
-
-func (s *Site) highlights(w http.ResponseWriter, r *http.Request) {
-	pg := pageParam(r)
-	p, err := get[Page[Object]](r.Context(), s.api, "/api/v1/mktv?"+q(pageSize, (pg-1)*pageSize, ""))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "highlights", "Highlights", listData{p.Items, p.Total, pager(pg, p.Total, "/highlights")})
-}
-
-func (s *Site) highlight(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(r.PathValue("id"), 10, 64)
-	if err != nil {
-		s.fail(w, r, errNotFound)
-		return
-	}
-	o, err := get[Object](r.Context(), s.api, fmt.Sprintf("/api/v1/objects/%d", id))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "highlight", fmt.Sprintf("Highlight %d", o.ID), o)
-}
-
-func (s *Site) courseList(w http.ResponseWriter, r *http.Request) {
-	cs, err := get[struct{ Items []Course }](r.Context(), s.api, "/api/v1/courses")
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "courses", "Courses", cs.Items)
-}
-
-type courseData struct {
-	Course   int
-	Ranks    Page[Rank]
-	Ghosts   Page[Object]
-	Pager    Pager
-	Offset   int
-	Standing *PlayerRank
-}
-
-func (s *Site) courseView(w http.ResponseWriter, r *http.Request) {
-	n, err := strconv.Atoi(r.PathValue("course"))
-	if err != nil || n < 0 || n > 1<<20 {
-		s.fail(w, r, errNotFound)
-		return
-	}
-	pg := pageParam(r)
-	ctx := r.Context()
-	d := courseData{Course: n, Offset: (pg - 1) * pageSize}
-	if d.Ranks, err = get[Page[Rank]](ctx, s.api, fmt.Sprintf("/api/v1/courses/%d/rankings?%s", n, q(pageSize, d.Offset, ""))); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	if d.Ghosts, err = get[Page[Object]](ctx, s.api, fmt.Sprintf("/api/v1/courses/%d/ghosts?%s", n, q(10, 0, ""))); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	if p, ok := s.player(r); ok && p.PID != "" {
-		if mine, err := get[struct{ Items []PlayerRank }](ctx, s.api, "/api/v1/players/"+p.PID+"/rankings"); err == nil {
-			for i := range mine.Items {
-				if mine.Items[i].Course == n {
-					d.Standing = &mine.Items[i]
-				}
-			}
-		}
-	}
-	d.Pager = pager(pg, d.Ranks.Total, fmt.Sprintf("/courses/%d", n))
-	s.render(w, r, 200, "course", s.courseName(n), d)
-}
-
-func (s *Site) tournaments(w http.ResponseWriter, r *http.Request) {
-	pg := pageParam(r)
-	p, err := get[Page[Tournament]](r.Context(), s.api, "/api/v1/tournaments?"+q(pageSize, (pg-1)*pageSize, ""))
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "tournaments", "Tournaments", struct {
-		Items []Tournament
-		Total int
-		Pager Pager
-	}{p.Items, p.Total, pager(pg, p.Total, "/tournaments")})
-}
-
-func (s *Site) tournament(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(r.PathValue("id"), 10, 32)
-	if err != nil {
-		s.fail(w, r, errNotFound)
-		return
-	}
-	path := fmt.Sprintf("/api/v1/tournaments/%d", id)
-	if v := r.URL.Query().Get("season"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil || n < 1 || n > 1<<20 {
-			s.fail(w, r, errNotFound)
-			return
-		}
-		path += "?season=" + strconv.Itoa(n)
-	}
-	t, err := get[Tournament](r.Context(), s.api, path)
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.render(w, r, 200, "tournament", t.Name, t)
-}
-
-// media serves a thumbnail or ghost file from the title's store. Only what the API lists is
-// reachable, and the API decides the content type (images are images, the rest downloads).
-func (s *Site) media(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	rec := &lazyWriter{ResponseWriter: w}
-	if err := s.api.media(r.Context(), id, rec); err != nil && !rec.wrote {
-		if errors.Is(err, errNotFound) {
-			http.NotFound(w, r)
-			return
-		}
-		log.Printf("mktv: media %d: %v", id, err)
-		http.Error(w, "unavailable", http.StatusBadGateway)
-	}
-}
-
-type lazyWriter struct {
-	http.ResponseWriter
-	wrote bool
-}
-
-func (l *lazyWriter) Write(b []byte) (int, error) { l.wrote = true; return l.ResponseWriter.Write(b) }
-
-func (s *Site) about(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, 200, "about", "About", nil)
 }

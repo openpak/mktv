@@ -3,6 +3,5 @@
 {{if .Data.Items}}
 <ul class="tiles">{{range .Data.Items}}{{template "tile" .}}{{end}}</ul>
 {{template "pager" .Data.Pager}}
-{{else}}<p class="card empty-card">No highlight has been uploaded yet.</p>{{end}}
+{{else}}{{template "empty" "No highlight has been uploaded yet."}}{{end}}
 {{template "foot" .}}{{end}}
-

@@ -1,6 +1,7 @@
 package site
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -32,11 +34,16 @@ type Object struct {
 	YouTubeID string    `json:"youtube_id"`
 	Created   time.Time `json:"created"`
 	Updated   time.Time `json:"updated"`
+	// Optional ghost fields.
+	Course *int   `json:"course"`
+	TimeMS int64  `json:"time_ms"`
+	Time   string `json:"time"`
 }
 
 type Rank struct {
 	Rank    int       `json:"rank"`
 	Player  string    `json:"player"`
+	Name    string    `json:"name"` // display name when the game stores one (Mario Kart Wii: the Mii name)
 	TimeMS  int64     `json:"time_ms"`
 	Time    string    `json:"time"`
 	Updated time.Time `json:"updated"`
@@ -84,14 +91,39 @@ type Page[T any] struct {
 	Items  []T `json:"items"`
 }
 
-var errNotFound = errors.New("not found")
+var (
+	errNotFound = errors.New("not found")
+	// errUnsupported is the API saying it has no such thing (501, e.g. no object store): an
+	// empty list to the visitor, not a failure.
+	errUnsupported = errors.New("not supported")
+)
+
+// items reads a list that is either {"items":[...]} or a bare [...] (the contract allows both).
+type items[T any] []T
+
+func (l *items[T]) UnmarshalJSON(b []byte) error {
+	b = bytes.TrimSpace(b)
+	if len(b) > 0 && b[0] == '[' {
+		return json.Unmarshal(b, (*[]T)(l))
+	}
+	var o struct {
+		Items []T `json:"items"`
+	}
+	if err := json.Unmarshal(b, &o); err != nil {
+		return err
+	}
+	*l = o.Items
+	return nil
+}
 
 // apiClient reads the title's API, with a short cache so a busy page costs the game server
 // one query per path per few seconds.
 type apiClient struct {
-	base string
-	http *http.Client
-	ttl  time.Duration
+	base   string
+	prefix string // /api/v1, or /api/mkw/v1 for Mario Kart Wii
+	key    string // sent as X-WFC-Internal-Key when set
+	http   *http.Client
+	ttl    time.Duration
 
 	mu    sync.Mutex
 	cache map[string]cached
@@ -102,8 +134,8 @@ type cached struct {
 	body []byte
 }
 
-func newAPIClient(base string) *apiClient {
-	return &apiClient{base: base, http: &http.Client{Timeout: 6 * time.Second}, ttl: 10 * time.Second, cache: map[string]cached{}}
+func newAPIClient(base, prefix, key string) *apiClient {
+	return &apiClient{base: base, prefix: prefix, key: key, http: &http.Client{Timeout: 6 * time.Second}, ttl: 10 * time.Second, cache: map[string]cached{}}
 }
 
 func (c *apiClient) raw(ctx context.Context, path string) ([]byte, error) {
@@ -113,7 +145,10 @@ func (c *apiClient) raw(ctx context.Context, path string) ([]byte, error) {
 		return e.body, nil
 	}
 	c.mu.Unlock()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+c.prefix+path, nil)
+	if err == nil && c.key != "" {
+		req.Header.Set("X-WFC-Internal-Key", c.key)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +164,8 @@ func (c *apiClient) raw(ctx context.Context, path string) ([]byte, error) {
 	switch {
 	case resp.StatusCode == http.StatusNotFound:
 		return nil, errNotFound
+	case resp.StatusCode == http.StatusNotImplemented:
+		return nil, errUnsupported
 	case resp.StatusCode != http.StatusOK:
 		return nil, fmt.Errorf("api %s: %s", path, resp.Status)
 	}
@@ -150,6 +187,15 @@ func get[T any](ctx context.Context, c *apiClient, path string) (T, error) {
 	return out, json.Unmarshal(b, &out)
 }
 
+// getList is get for a list that may be missing or unsupported on this game: that is empty.
+func getList[T any](ctx context.Context, c *apiClient, path string) (Page[T], error) {
+	p, err := get[Page[T]](ctx, c, path)
+	if errors.Is(err, errNotFound) || errors.Is(err, errUnsupported) {
+		return Page[T]{}, nil
+	}
+	return p, err
+}
+
 func q(limit, offset int, owner string) string {
 	v := url.Values{"limit": {fmt.Sprint(limit)}, "offset": {fmt.Sprint(offset)}}
 	if owner != "" {
@@ -158,11 +204,15 @@ func q(limit, offset int, owner string) string {
 	return v.Encode()
 }
 
-// media streams an object body (thumbnail or ghost) from the API to w.
+// media streams an object body (thumbnail or ghost) from the API to w. Images pass through as
+// images; everything else is forced to a download so it is never rendered as a page.
 func (c *apiClient) media(ctx context.Context, id uint64, w http.ResponseWriter) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/objects/%d/body", c.base, id), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s%s/objects/%d/body", c.base, c.prefix, id), nil)
 	if err != nil {
 		return err
+	}
+	if c.key != "" {
+		req.Header.Set("X-WFC-Internal-Key", c.key)
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -176,10 +226,16 @@ func (c *apiClient) media(ctx context.Context, id uint64, w http.ResponseWriter)
 	default:
 		return fmt.Errorf("api media: %s", resp.Status)
 	}
-	for _, h := range []string{"Content-Type", "Content-Disposition", "Content-Length", "Cache-Control"} {
-		if v := resp.Header.Get(h); v != "" {
-			w.Header().Set(h, v)
-		}
+	ct := resp.Header.Get("Content-Type")
+	if strings.HasPrefix(ct, "image/png") || strings.HasPrefix(ct, "image/jpeg") {
+		w.Header().Set("Content-Type", ct)
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+	} else {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="ghost-%d.bin"`, id))
+	}
+	if v := resp.Header.Get("Content-Length"); v != "" {
+		w.Header().Set("Content-Length", v)
 	}
 	_, err = io.Copy(w, resp.Body)
 	return err

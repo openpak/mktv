@@ -18,12 +18,25 @@ const (
 )
 
 // Player is what the site remembers about a signed-in visitor: the OpenPak account, the name
-// openpak.org shows for it and, when a Wii U is linked, its player ID. Never a password or token.
+// openpak.org shows for it and the player ids of the consoles it has linked, one per game family.
+// Never a password or token. A session is well under 400 bytes, far below the cookie limit.
 type Player struct {
-	Account string `json:"a"`
-	Name    string `json:"n"`
-	PID     string `json:"p,omitempty"` // Wii U PID; empty when the account has no Wii U linked
-	Expires int64  `json:"e"`
+	Account   string `json:"a"`
+	Name      string `json:"n"`
+	PID       string `json:"p,omitempty"` // Wii U PID (also the 3DS PID unless N3DS is set)
+	N3DS      string `json:"d,omitempty"` // 3DS PID, only when the answer carries one of its own
+	SwitchPID string `json:"s,omitempty"` // Switch principal id, decimal
+	WFCUserID string `json:"w,omitempty"` // Wii/DS console user id, decimal
+	Expires   int64  `json:"e"`
+}
+
+// N3DSPID is the 3DS player id: openpak.org gives one PNID to a Wii U and a 3DS (sso.md), so
+// without a 3DS id of its own the Wii U PID is the 3DS PID.
+func (p Player) N3DSPID() string {
+	if p.N3DS != "" {
+		return p.N3DS
+	}
+	return p.PID
 }
 
 func (p Player) Display() string {
