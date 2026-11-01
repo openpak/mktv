@@ -278,10 +278,10 @@ func TestCallbackHappyPath(t *testing.T) {
 	if c := do(s, "GET", "/me", nil).Code; c != 303 {
 		t.Errorf("anonymous /me: %d", c)
 	}
-	// Sign out clears the session and goes through openpak.org.
+	// Sign out clears only this site's session and returns home; openpak.org is never visited.
 	out := do(s, "GET", "/auth/logout", nil, sess)
 	loc := out.Header().Get("Location")
-	if out.Code != 303 || loc != "https://openpak.org/account/sso/logout?redirect_uri=https%3A%2F%2Fmktv.test%2F" {
+	if out.Code != 303 || loc != "/" {
 		t.Errorf("logout: %d %s", out.Code, loc)
 	}
 	if cs := out.Result().Cookies(); len(cs) == 0 || cs[0].MaxAge >= 0 {

@@ -142,21 +142,16 @@ func (s *Site) exchange(ctx context.Context, code, verifier string) (Player, err
 	return p, nil
 }
 
-// authLogout ends this site's session, then hands the browser to openpak.org, which asks
-// before it ends its own and sends the person back here.
+// authLogout ends this site's session only and returns to the home page. openpak.org stays
+// signed in, like leaving one Google app; the next Sign in may sign straight back in.
 func (s *Site) authLogout(w http.ResponseWriter, r *http.Request) {
 	if !s.signInOn() {
 		http.NotFound(w, r)
 		return
 	}
 	noStore(w)
-	_, was := s.player(r)
 	s.clearSession(w)
-	if !was {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	http.Redirect(w, r, s.cfg.OpenPakURL+"/account/sso/logout?redirect_uri="+url.QueryEscape(s.cfg.PublicURL+"/"), http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 type meData struct {

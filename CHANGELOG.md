@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.2.3 — 2026-11-01
+
+- Sign out ends only this site's session and returns to the home page; it no longer goes through openpak.org's "Sign out of OpenPak?" page, and openpak.org stays signed in. The next Sign in may sign straight back in while openpak.org is signed in
+
 ## v0.2.2 — 2026-11-01
 
 - Footer line "Part of the OpenPak network" moved to the bottom line, as on the other Open sites
