@@ -8,9 +8,13 @@ AutoUpdate=registry
 Network=openpak.network
 IP=<pinned by deploy/pin-ips.sh --apply>
 PublishPort=127.0.0.1:20190:20190
-EnvironmentFile=%h/openpak/deploy/.env
-Environment=MKTV_API_URL=http://openpak-mario-kart-8:22853 MKTV_CORE_URL=http://openpak-website:20010 MKTV_SESSION_KEY=...
+EnvironmentFile=%h/openpak/deploy/mktv.env
+Environment=MKTV_API_URL=http://openpak-mario-kart-8:22853 MKTV_CORE_URL=http://openpak-website:20010
 ```
+
+`mktv.env` (mode 0600) holds `MKTV_SESSION_KEY` (32+ random characters) and `SSO_CLIENT_OPENKART_SECRET`, the same value as in the website's `.env`. Sign-in is off unless `MKTV_CORE_URL`, the secret and the key are all set.
+
+Sign-in is openpak.org single sign-on (client `openkart`; the contract is `docs/sso.md` in the website repo): `/auth/login` redirects to `https://openpak.org/account/sso/authorize`, `/auth/callback` swaps the code at `POST $MKTV_CORE_URL/internal/sso/token`, `/auth/logout` ends the site session and goes through openpak.org's `/account/sso/logout`. The registered redirect origin is `https://openkart.openpak.org`.
 
 The title side: set `MK8_API_ADDR=:22853` on `openpak-mario-kart-8` (read-only; the image must contain the API, nex v1.5.0 or later).
 

@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -29,23 +28,17 @@ const pageSize = 20
 type Site struct {
 	cfg     Config
 	api     *apiClient
-	core    *coreClient
+	sso     *http.Client
 	courses map[int]string
 	pages   map[string]*template.Template
 	mux     *http.ServeMux
 	asset   string
-
-	limMu sync.Mutex
-	lim   map[string][]time.Time
 }
 
 // New builds the site. It does not touch the network.
 func New(cfg Config) (*Site, error) {
-	s := &Site{cfg: cfg, api: newAPIClient(cfg.APIURL), courses: map[int]string{}, lim: map[string][]time.Time{},
+	s := &Site{cfg: cfg, api: newAPIClient(cfg.APIURL), courses: map[int]string{}, sso: &http.Client{Timeout: 10 * time.Second},
 		asset: strconv.FormatInt(time.Now().Unix(), 36)}
-	if cfg.CoreURL != "" {
-		s.core = newCoreClient(cfg.CoreURL)
-	}
 	if cfg.CoursesFile != "" {
 		b, err := os.ReadFile(cfg.CoursesFile)
 		if err != nil {
@@ -61,7 +54,7 @@ func New(cfg Config) (*Site, error) {
 		"bytes":    humanBytes,
 		"yt":       youtubeEmbed,
 		"add":      func(a int64, b int) int64 { return a + int64(b) },
-		"mine":     func(p *Player, pid string) bool { return p != nil && p.PID == pid },
+		"mine":     func(p *Player, pid string) bool { return p != nil && p.PID != "" && p.PID == pid },
 		"who":      func(p *Player, pid string) string { return who(p, pid) },
 		"pages":    pager,
 	}
@@ -98,6 +91,10 @@ func New(cfg Config) (*Site, error) {
 	s.mux.HandleFunc("GET /tournaments/{id}", s.tournament)
 	s.mux.HandleFunc("GET /media/{id}", s.media)
 	s.mux.HandleFunc("GET /about", s.about)
+	s.mux.HandleFunc("GET /me", s.me)
+	s.mux.HandleFunc("GET /auth/login", s.authLogin)
+	s.mux.HandleFunc("GET /auth/callback", s.authCallback)
+	s.mux.HandleFunc("GET /auth/logout", s.authLogout)
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprintln(w, "ok mktv") })
 	s.mux.HandleFunc("GET /static/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "public, max-age=3600")
@@ -131,7 +128,7 @@ type view struct {
 
 func (s *Site) render(w http.ResponseWriter, r *http.Request, status int, name, title string, data any) {
 	v := view{Title: title, Path: r.URL.Path, Asset: s.asset, OpenPak: s.cfg.OpenPakURL, Contact: s.cfg.ContactEmail,
-		SignIn: s.core != nil, Data: data}
+		SignIn: s.signInOn(), Data: data}
 	if p, ok := s.player(r); ok {
 		v.Player = &p
 	}
@@ -214,7 +211,7 @@ func (s *Site) courseName(n int) string {
 }
 
 func who(p *Player, pid string) string {
-	if p != nil && p.PID == pid {
+	if p != nil && p.PID != "" && p.PID == pid {
 		return "You (" + p.Display() + ")"
 	}
 	return "Player " + pid
@@ -353,7 +350,7 @@ func (s *Site) courseView(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if p, ok := s.player(r); ok {
+	if p, ok := s.player(r); ok && p.PID != "" {
 		if mine, err := get[struct{ Items []PlayerRank }](ctx, s.api, "/api/v1/players/"+p.PID+"/rankings"); err == nil {
 			for i := range mine.Items {
 				if mine.Items[i].Course == n {

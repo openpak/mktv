@@ -1,5 +1,11 @@
 # Changelog — OpenKart (mktv)
 
+## v0.2.0 — 2026-11-01
+
+- Sign-in through openpak.org single sign-on (`/auth/login`, `/auth/callback`, `/auth/logout`; state and PKCE, server-side code exchange). The top bar has the same Sign in button and account chip as openpak.org; the site has no sign-in form
+- "Your results" (`/me`) is back, keyed by the Wii U player ID the account carries; an account with no Wii U linked is told so, with a link to openpak.org
+- New: `SSO_CLIENT_OPENKART_SECRET`. `MKTV_CORE_URL` is now openpak.org's website, server to server
+
 ## v0.1.3 — 2026-11-01
 
 - Removed the site's own sign-in form, the "Your results" page and sign-out. Sign-in comes back through openpak.org's single sign-on, not a separate form

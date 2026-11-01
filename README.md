@@ -6,7 +6,7 @@ OpenPak's own website for Mario Kart 8 (Wii U) highlights, ghosts, rankings and 
 | --- | --- |
 | Network | Wii U |
 | Role | Public website (repo `mktv`, site name OpenKart): Mario Kart TV highlights, time-trial ghosts and rankings per course, tournaments |
-| Depends on | the [`mario-kart-8`](https://github.com/openpak/nex/tree/main/titles/mario-kart-8) title's read API; OpenPak's public API for sign-in |
+| Depends on | the [`mario-kart-8`](https://github.com/openpak/nex/tree/main/titles/mario-kart-8) title's read API; openpak.org single sign-on |
 | Image | `ghcr.io/openpak/mktv` |
 | Based on | nothing: written from scratch (see [Clean room](docs/clean-room.md)) |
 | Licence | AGPL-3.0-only |
@@ -19,7 +19,7 @@ OpenPak's own website for Mario Kart 8 (Wii U) highlights, ghosts, rankings and 
 | `/highlights`, `/highlights/{id}` | highlight reels: player, date, size, tags, thumbnail if the game uploaded one, an embedded YouTube video when one is stored |
 | `/courses`, `/courses/{n}` | ranking per course (fastest first), the ghosts uploaded for it, your own standing when signed in |
 | `/tournaments`, `/tournaments/{id}` | tournaments and one season's leaderboard |
-| `/signin`, `/me` | sign in with an OpenPak account; your times and highlights |
+| `/auth/login`, `/auth/callback`, `/auth/logout`, `/me` | sign in through openpak.org; your times and highlights |
 
 Replays are not playable in a browser. See [Gaps](docs/gaps.md).
 

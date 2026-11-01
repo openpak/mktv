@@ -25,7 +25,16 @@
       <a href="/highlights" {{if eq .Path "/highlights"}}aria-current="page"{{end}}>Highlights</a>
       <a href="/courses" {{if eq .Path "/courses"}}aria-current="page"{{end}}>Courses</a>
       <a href="/tournaments" {{if eq .Path "/tournaments"}}aria-current="page"{{end}}>Tournaments</a>
+      {{if .Player}}<a href="/me" {{if eq .Path "/me"}}aria-current="page"{{end}}>Your results</a>{{end}}
     </nav>
+    {{if .SignIn}}<div class="ml-auto">
+      {{if .Player}}
+        <a class="btn ghost" href="/auth/logout">Sign out</a>
+        <a class="avatar-btn" href="/me" aria-label="Your results" title="{{.Player.Display}}">{{.Player.Initial}}</a>
+      {{else}}
+        <a class="btn ghost" href="/auth/login?next={{.Path}}">Sign in</a>
+      {{end}}
+    </div>{{end}}
   </div>
 </header>
 <main id="main" class="wrap pt-6">
