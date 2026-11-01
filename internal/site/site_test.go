@@ -187,81 +187,10 @@ func fakeCore(t *testing.T, twoFactor, noWiiU bool) (*httptest.Server, *int) {
 	return srv, &revoked
 }
 
-func TestSignInFlow(t *testing.T) {
-	core, revoked := fakeCore(t, false, false)
-	s := newSite(t, core.URL)
-	if w := do(s, "POST", "/signin", url.Values{"email": {"a@b.co"}, "password": {"wrong"}}); w.Code != 401 || strings.Contains(w.Body.String(), "wrong") {
-		t.Fatalf("bad password: %d", w.Code)
-	}
-	w := do(s, "POST", "/signin", url.Values{"email": {"a@b.co"}, "password": {"hunter2"}})
-	if w.Code != 303 || *revoked != 1 {
-		t.Fatalf("sign in: %d revoked %d", w.Code, *revoked)
-	}
-	cookie := w.Result().Cookies()[0]
-	if !cookie.HttpOnly || !cookie.Secure || cookie.SameSite != http.SameSiteStrictMode {
-		t.Errorf("cookie flags: %+v", cookie)
-	}
-	if strings.Contains(cookie.Value, "secret") || strings.Contains(cookie.Value, "hunter2") {
-		t.Error("the cookie must carry no credential")
-	}
-	me := do(s, "GET", "/me", nil, cookie)
-	if me.Code != 200 || !strings.Contains(me.Body.String(), "1:20.000") || !strings.Contains(me.Body.String(), "Mario") {
-		t.Fatalf("me: %d %s", me.Code, me.Body)
-	}
-	if body := do(s, "GET", "/courses/4", nil, cookie).Body.String(); !strings.Contains(body, "You (Mario)") || !strings.Contains(body, "rank 1 of 2") {
-		t.Error("signed in, the course page should mark the player")
-	}
-	// A tampered cookie is a stranger.
-	forged := &http.Cookie{Name: cookie.Name, Value: strings.Replace(cookie.Value, ".", "x.", 1)}
-	if c := do(s, "GET", "/me", nil, forged).Code; c != 303 {
-		t.Errorf("forged cookie: %d", c)
-	}
-	if c := do(s, "GET", "/me", nil).Code; c != 303 {
-		t.Errorf("anonymous /me: %d", c)
-	}
-	if out := do(s, "POST", "/signout", url.Values{}, cookie); out.Code != 303 || out.Result().Cookies()[0].MaxAge >= 0 {
-		t.Error("sign out should clear the cookie")
-	}
-}
-
-func TestSignInTwoFactorAndNoWiiU(t *testing.T) {
-	core, revoked := fakeCore(t, true, false)
-	s := newSite(t, core.URL)
-	w := do(s, "POST", "/signin", url.Values{"email": {"a@b.co"}, "password": {"hunter2"}})
-	if w.Code != 200 || !strings.Contains(w.Body.String(), `name="challenge" value="ch1"`) {
-		t.Fatalf("expected the code form: %d", w.Code)
-	}
-	if c := do(s, "POST", "/signin/2fa", url.Values{"challenge": {"ch1"}, "code": {"000000"}}).Code; c != 401 {
-		t.Errorf("wrong code: %d", c)
-	}
-	if c := do(s, "POST", "/signin/2fa", url.Values{"challenge": {"ch1"}, "code": {"123456"}}).Code; c != 303 || *revoked != 1 {
-		t.Errorf("right code: %d revoked %d", c, *revoked)
-	}
-
-	core2, revoked2 := fakeCore(t, false, true)
-	s2 := newSite(t, core2.URL)
-	w = do(s2, "POST", "/signin", url.Values{"email": {"a@b.co"}, "password": {"hunter2"}})
-	if w.Code != 403 || *revoked2 != 1 {
-		t.Errorf("no Wii U identity: %d revoked %d (the token must still be revoked)", w.Code, *revoked2)
-	}
-}
-
 func TestSignInOff(t *testing.T) {
 	s := newSite(t, "")
 	if c := do(s, "GET", "/signin", nil).Code; c != 404 {
 		t.Errorf("sign-in must not exist without a core URL: %d", c)
-	}
-}
-
-func TestSignInRateLimit(t *testing.T) {
-	core, _ := fakeCore(t, false, false)
-	s := newSite(t, core.URL)
-	var last int
-	for i := 0; i < 12; i++ {
-		last = do(s, "POST", "/signin", url.Values{"email": {"a@b.co"}, "password": {"x"}}).Code
-	}
-	if last != 429 {
-		t.Errorf("after 10 attempts: %d", last)
 	}
 }
 

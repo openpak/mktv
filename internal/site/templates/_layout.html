@@ -26,14 +26,6 @@
       <a href="/courses" {{if eq .Path "/courses"}}aria-current="page"{{end}}>Courses</a>
       <a href="/tournaments" {{if eq .Path "/tournaments"}}aria-current="page"{{end}}>Tournaments</a>
     </nav>
-    <div class="ml-auto">
-      {{if .Player}}
-        <a class="btn ghost" href="/me" {{if eq .Path "/me"}}aria-current="page"{{end}}>{{.Player.Display}}</a>
-        <form method="post" action="/signout" class="inline"><button type="submit" class="btn ghost">Sign out</button></form>
-      {{else if .SignIn}}
-        <a class="btn primary" href="/signin">Sign in</a>
-      {{end}}
-    </div>
   </div>
 </header>
 <main id="main" class="wrap pt-6">

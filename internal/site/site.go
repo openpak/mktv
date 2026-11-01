@@ -98,11 +98,6 @@ func New(cfg Config) (*Site, error) {
 	s.mux.HandleFunc("GET /tournaments/{id}", s.tournament)
 	s.mux.HandleFunc("GET /media/{id}", s.media)
 	s.mux.HandleFunc("GET /about", s.about)
-	s.mux.HandleFunc("GET /me", s.me)
-	s.mux.HandleFunc("GET /signin", s.signinForm)
-	s.mux.HandleFunc("POST /signin", s.signin)
-	s.mux.HandleFunc("POST /signin/2fa", s.signin2FA)
-	s.mux.HandleFunc("POST /signout", s.signout)
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprintln(w, "ok mktv") })
 	s.mux.HandleFunc("GET /static/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "public, max-age=3600")

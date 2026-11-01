@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.1.3 — 2026-11-01
+
+- Removed the site's own sign-in form, the "Your results" page and sign-out. Sign-in comes back through openpak.org's single sign-on, not a separate form
+
 ## v0.1.2 — 2026-11-01
 
 - Top bar and footer show only the OpenKart mark and name; OpenKart favicon and touch icon
