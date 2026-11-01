@@ -59,5 +59,3 @@ tr.me td { background: var(--accent-weak); }
 .legal { max-width: 44rem; }
 .legal ul { padding-left: 1.25rem; }
 
-.crumb { color: var(--faint); font-size: 1.15rem; margin: 0 -2px; }
-.site-name { color: var(--ink); }

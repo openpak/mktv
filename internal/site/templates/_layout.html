@@ -9,8 +9,10 @@
 <meta name="theme-color" content="#e9ecf0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#24272d" media="(prefers-color-scheme: dark)">
 <meta name="description" content="OpenKart shows Mario Kart 8 highlights, time-trial ghosts, course rankings and tournaments from OpenPak.">
-<title>{{.Title}} · OpenKart · OpenPak</title>
-<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<title>{{.Title}} · OpenKart</title>
+<link rel="icon" href="/static/openkart.svg" type="image/svg+xml">
+<link rel="icon" href="/static/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="stylesheet" href="/static/base.css?v={{.Asset}}">
 <link rel="stylesheet" href="/static/mktv.css?v={{.Asset}}">
 </head>
@@ -18,9 +20,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap">
-    <a href="{{.OpenPak}}/" class="brand"><img src="/static/icon.svg" alt="" width="28" height="28">OpenPak</a>
-    <span class="crumb" aria-hidden="true">/</span>
-    <a href="/" class="brand site-name">OpenKart</a>
+    <a href="/" class="brand"><img src="/static/openkart.svg" alt="" width="32" height="32">OpenKart</a>
     <nav aria-label="OpenKart" class="navlinks">
       <a href="/highlights" {{if eq .Path "/highlights"}}aria-current="page"{{end}}>Highlights</a>
       <a href="/courses" {{if eq .Path "/courses"}}aria-current="page"{{end}}>Courses</a>
@@ -44,10 +44,11 @@
 <footer class="site-foot">
   <div class="wrap">
     <div>
-      <a href="{{.OpenPak}}/" class="brand"><img src="/static/icon.svg" alt="" width="28" height="28">OpenPak</a>
+      <a href="/" class="brand"><img src="/static/openkart.svg" alt="" width="28" height="28">OpenKart</a>
       <p class="muted" style="max-width:24rem;font-size:.9rem;margin-top:.75rem">An open network for the consoles you already own. OpenKart is OpenPak's own site for Mario Kart 8 on Wii U: highlights, ghosts, rankings and tournaments.</p>
     </div>
-    <nav aria-labelledby="foot-net"><h2 id="foot-net">Network</h2><ul>
+    <nav aria-labelledby="foot-net"><h2 id="foot-net">OpenPak</h2><ul>
+      <li><a href="{{.OpenPak}}/">Home</a></li>
       <li><a href="{{.OpenPak}}/titles">Titles</a></li>
       <li><a href="{{.OpenPak}}/features">Features</a></li>
       <li><a href="{{.OpenPak}}/status">Status</a></li>
@@ -56,19 +57,19 @@
       <li><a href="/highlights">Highlights</a></li>
       <li><a href="/courses">Courses</a></li>
       <li><a href="/tournaments">Tournaments</a></li>
-      <li><a href="/about">About this site</a></li>
+      <li><a href="/about">About</a></li>
     </ul></nav>
     <nav aria-labelledby="foot-proj"><h2 id="foot-proj">Project</h2><ul>
       <li><a href="https://github.com/openpak/mktv" rel="noopener">Source</a></li>
-      <li><a href="mailto:{{.Contact}}">Contact</a></li>
       <li><a href="{{.OpenPak}}/help">Help</a></li>
+      <li><a href="mailto:{{.Contact}}">Contact</a></li>
     </ul></nav>
     <nav aria-labelledby="foot-legal"><h2 id="foot-legal">Legal</h2><ul>
       <li><a href="{{.OpenPak}}/terms">Terms</a></li>
       <li><a href="{{.OpenPak}}/privacy">Privacy</a></li>
-      <li><a href="{{.OpenPak}}/legal">Legal notices</a></li>
+      <li><a href="{{.OpenPak}}/legal">Trademarks and takedowns</a></li>
     </ul></nav>
-    <div class="foot-bottom"><span>© OpenPak · AGPL-3.0</span></div>
+    <div class="foot-bottom"><span>© OpenPak · AGPL-3.0 · Mario Kart is a trademark of Nintendo.</span></div>
   </div>
 </footer>
 </body>

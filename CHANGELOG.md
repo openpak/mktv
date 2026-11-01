@@ -1,5 +1,10 @@
 # Changelog — OpenKart (mktv)
 
+## v0.1.2 — 2026-11-01
+
+- Top bar and footer show only the OpenKart mark and name; OpenKart favicon and touch icon
+- Footer follows the shared Open-site layout (OpenPak, OpenKart, Project, Legal)
+
 ## v0.1.1 — 2026-11-01
 
 - Default port 20190 (20150 belongs to connectivity)
