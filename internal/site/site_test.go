@@ -443,3 +443,14 @@ func TestParseCourses(t *testing.T) {
 		t.Errorf("%v", m)
 	}
 }
+
+// The body font is var(--font-sans); if the synced stylesheet loses it the text falls back to serif.
+func TestStylesheetDefinesFontSans(t *testing.T) {
+	b, err := staticFS.ReadFile("static/base.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "--font-sans:") {
+		t.Error("base.css must define --font-sans (scripts/sync-css.sh)")
+	}
+}

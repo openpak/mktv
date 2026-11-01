@@ -13,6 +13,7 @@
 - New env: `MKTV_MK8D_API_URL`, `MKTV_MK7_API_URL`, `MKTV_MKW_API_URL`, `MKTV_MKW_API_KEY`, `MKTV_<GAME>_COURSES_FILE`. `MKTV_API_URL` (Mario Kart 8) is now optional; at least one game is needed
 - Description, about page and footer text name the four games
 - Friendly 404 page for unknown addresses
+- Body text is sans-serif again: base.css now defines `--font-sans` as openpak.org does; `scripts/sync-css.sh` copies it from the source, and a test checks it
 
 ## v0.2.3 — 2026-11-01
 

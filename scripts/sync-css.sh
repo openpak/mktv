@@ -9,6 +9,7 @@ out=internal/site/static/base.css
   echo " * system UI tokens and components) minus Tailwind's directives. Do not edit by hand;"
   echo " * mktv's own rules are in mktv.css. */"
   sed -n '21,103p' "$src"
+  echo ":root { $(grep -m1 -e '^  --font-sans:' "$src" | sed 's/^ *//') }"
   echo ':root { --font-ui: "M PLUS Rounded 1c", ui-rounded, ui-sans-serif, system-ui, sans-serif; --radius-card: 14px; }'
   sed -n '131,$p' "$src"
 } > "$out"
