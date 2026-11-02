@@ -1,5 +1,11 @@
 # Changelog — OpenKart (mktv)
 
+## v0.3.1 — 2026-11-02
+
+- Course rankings come from the openpak.org public rankings API (`/api/v1/rankings/{game}/{course}`), so
+  OpenKart shows the same numbers and player names as openpak.org and the app. The game's own read API
+  answers only if openpak.org does not. "You" highlighting also matches the OpenPak account id.
+
 ## v0.3.0 — 2026-11-01
 
 - Four games: Mario Kart 8 (Wii U), Mario Kart 8 Deluxe (Switch), Mario Kart 7 (3DS) and Mario Kart Wii. A game switcher in the top bar (Wii U, Switch, 3DS, Wii), a section bar per game, game cards on the home page and a home page per game with counts. Mario Kart 8 keeps `/highlights`, `/courses`, `/tournaments`, `/me`; the others live under `/mk8d/`, `/mk7/`, `/mkw/`

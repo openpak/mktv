@@ -32,11 +32,13 @@ type Site struct {
 	pages map[string]*template.Template
 	mux   *http.ServeMux
 	asset string
+	pub   *apiClient // the openpak.org public rankings API (/api/v1/rankings)
 }
 
 // New builds the site. It does not touch the network.
 func New(cfg Config) (*Site, error) {
 	s := &Site{cfg: cfg, sso: &http.Client{Timeout: 10 * time.Second}, asset: strconv.FormatInt(time.Now().Unix(), 36)}
+	s.pub = newAPIClient(cfg.OpenPakURL, "/api/v1", "")
 	urls := map[string]string{"mk8": cfg.APIURL, "mk8d": cfg.MK8DURL, "mk7": cfg.MK7URL, "mkw": cfg.MKWURL}
 	for _, d := range gameDefs() {
 		if urls[d.Slug] == "" {
@@ -246,7 +248,8 @@ func mine(p *Player, g *Game, id string) bool {
 	if p == nil || g == nil || id == "" {
 		return false
 	}
-	return g.Identity(p) == id
+	// Ids are the game's player id, or an OpenPak account id where the ranking came from openpak.org.
+	return g.Identity(p) == id || (p.Account != "" && p.Account == id)
 }
 
 // who is how a player is named in a list: the visitor as "You (name)", others by the name the

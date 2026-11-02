@@ -1,6 +1,7 @@
 package site
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type handler func(g *Game, w http.ResponseWriter, r *http.Request)
@@ -156,9 +158,13 @@ func (s *Site) courseView(g *Game, w http.ResponseWriter, r *http.Request) {
 	pg := pageParam(r)
 	ctx := r.Context()
 	d := courseData{Course: n, Offset: (pg - 1) * pageSize}
-	if d.Ranks, err = getList[Rank](ctx, g.api, fmt.Sprintf("/courses/%d/rankings?%s", n, q(pageSize, d.Offset, ""))); err != nil {
-		s.fail(w, r, g, err)
-		return
+	// The numbers come from the openpak.org rankings API, the same every OpenPak site shows; the
+	// game's own read API answers only when openpak.org does not.
+	if d.Ranks, err = s.publicRanks(ctx, g, n, d.Offset); err != nil {
+		if d.Ranks, err = getList[Rank](ctx, g.api, fmt.Sprintf("/courses/%d/rankings?%s", n, q(pageSize, d.Offset, ""))); err != nil {
+			s.fail(w, r, g, err)
+			return
+		}
 	}
 	if g.Ghosts {
 		if d.Ghosts, err = getList[Object](ctx, g.api, fmt.Sprintf("/courses/%d/ghosts?%s", n, q(10, 0, ""))); err != nil {
@@ -365,4 +371,33 @@ func (s *Site) me(w http.ResponseWriter, r *http.Request) {
 	}
 	wg.Wait()
 	s.render(w, r, nil, 200, "me", "Your results", secs)
+}
+
+// rankingsAnswer is the part of GET /api/v1/rankings/{slug}/{board} the site reads.
+type rankingsAnswer struct {
+	Total  int `json:"total"`
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+	Rows   []struct {
+		Rank      int       `json:"rank"`
+		AccountID string    `json:"account_id"`
+		Name      string    `json:"name"`
+		Score     int64     `json:"score"`
+		Display   string    `json:"display"`
+		UpdatedAt time.Time `json:"updated_at"`
+	} `json:"rows"`
+}
+
+// publicRanks is one course's ranking from openpak.org's public rankings API, with the players'
+// names it resolved. A course nobody has set a time on is an empty page.
+func (s *Site) publicRanks(ctx context.Context, g *Game, course, offset int) (Page[Rank], error) {
+	out, err := get[rankingsAnswer](ctx, s.pub, fmt.Sprintf("/rankings/%s/%d?%s", g.RankingsSlug, course, q(pageSize, offset, "")))
+	if err != nil {
+		return Page[Rank]{}, err
+	}
+	p := Page[Rank]{Total: out.Total, Offset: out.Offset, Limit: out.Limit}
+	for _, r := range out.Rows {
+		p.Items = append(p.Items, Rank{Rank: r.Rank, Player: r.AccountID, Name: r.Name, TimeMS: r.Score, Time: r.Display, Updated: r.UpdatedAt})
+	}
+	return p, nil
 }

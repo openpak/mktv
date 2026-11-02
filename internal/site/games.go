@@ -6,6 +6,7 @@ import "strconv"
 // address is configured.
 type Game struct {
 	Slug                            string // mk8, mk8d, mk7, mkw
+	RankingsSlug                    string // the game's slug in the openpak.org rankings API
 	Name                            string // Mario Kart 8 Deluxe
 	Console                         string // Switch (the switcher label)
 	Home                            string // /mk8d
@@ -49,19 +50,19 @@ var mkwCourses = []string{
 
 func gameDefs() []gameDef {
 	return []gameDef{
-		{Game: Game{Slug: "mk8", Name: "Mario Kart 8", Console: "Wii U", Home: "/mk8", Base: "",
+		{Game: Game{Slug: "mk8", RankingsSlug: "mario-kart-8", Name: "Mario Kart 8", Console: "Wii U", Home: "/mk8", Base: "",
 			Intro:      "Mario Kart TV highlights, time-trial rankings, ghosts and community tournaments.",
 			Highlights: true, Ghosts: true, Tournaments: true, TournamentsLabel: "Tournaments", Count: 48,
 			ident: func(p Player) string { return p.PID }}, prefix: "/api/v1"},
-		{Game: Game{Slug: "mk8d", Name: "Mario Kart 8 Deluxe", Console: "Switch", Home: "/mk8d", Base: "/mk8d",
+		{Game: Game{Slug: "mk8d", RankingsSlug: "mario-kart-8-deluxe", Name: "Mario Kart 8 Deluxe", Console: "Switch", Home: "/mk8d", Base: "/mk8d",
 			Intro:  "Time-trial rankings, ghosts and tournaments.",
 			Ghosts: true, Tournaments: true, TournamentsLabel: "Tournaments", Count: 96,
 			ident: func(p Player) string { return p.SwitchPID }}, prefix: "/api/v1"},
-		{Game: Game{Slug: "mk7", Name: "Mario Kart 7", Console: "3DS", Home: "/mk7", Base: "/mk7",
+		{Game: Game{Slug: "mk7", RankingsSlug: "mario-kart-7", Name: "Mario Kart 7", Console: "3DS", Home: "/mk7", Base: "/mk7",
 			Intro:  "Time-trial rankings, ghosts and communities.",
 			Ghosts: true, Tournaments: true, TournamentsLabel: "Communities", Count: 32,
 			ident: func(p Player) string { return p.N3DSPID() }}, prefix: "/api/v1"},
-		{Game: Game{Slug: "mkw", Name: "Mario Kart Wii", Console: "Wii", Home: "/mkw", Base: "/mkw",
+		{Game: Game{Slug: "mkw", RankingsSlug: "mario-kart-wii", Name: "Mario Kart Wii", Console: "Wii", Home: "/mkw", Base: "/mkw",
 			Intro:  "Worldwide time-trial rankings and ghosts for all 32 courses.",
 			Ghosts: true, Count: 32, Names: mkwCourses,
 			ident: func(p Player) string { return p.WFCUserID }}, prefix: "/api/mkw/v1"},
