@@ -39,11 +39,11 @@ The stylesheet is openpak.org's own, copied by `scripts/sync-css.sh` so the two 
 
 ## Docs
 
-- [Docs index](docs/README.md)
 - [Read API](docs/api.md)
 - [Deploy](docs/deploy.md)
 - [Gaps](docs/gaps.md)
 - [Clean room](docs/clean-room.md)
+- [Provenance](docs/provenance.md)
 
 ## Licence
 
