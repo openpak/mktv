@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.3.2 — 2026-11-03
+
+- Deploy docs: production now serves all four games. Mario Kart 8 Deluxe runs on the host network, so mktv reaches it as `http://host.containers.internal:22854`; Mario Kart 7 needs `MK7_API_ADDR=:22855` set on its server; `MKTV_MKW_API_KEY` is wfc-race's `WFC_INTERNAL_KEY`.
+
 ## v0.3.1 — 2026-11-02
 
 - Course rankings come from the openpak.org public rankings API (`/api/v1/rankings/{game}/{course}`), so

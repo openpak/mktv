@@ -9,7 +9,7 @@ Network=openpak.network
 IP=<pinned by deploy/pin-ips.sh --apply>
 PublishPort=127.0.0.1:20190:20190
 EnvironmentFile=%h/openpak/deploy/mktv.env
-Environment=MKTV_API_URL=http://openpak-mario-kart-8:22853 MKTV_MK8D_API_URL=http://openpak-switch-nexd:22854 MKTV_MK7_API_URL=http://openpak-mario-kart-7:22855 MKTV_MKW_API_URL=http://openpak-wfc-race:20208 MKTV_CORE_URL=http://openpak-website:20010
+Environment=MKTV_API_URL=http://openpak-mario-kart-8:22853 MKTV_MK8D_API_URL=http://host.containers.internal:22854 MKTV_MK7_API_URL=http://openpak-mario-kart-7:22855 MKTV_MKW_API_URL=http://openpak-wfc-race:20208 MKTV_CORE_URL=http://openpak-website:20010
 ```
 
 `mktv.env` (mode 0600) holds `MKTV_SESSION_KEY` (32+ random characters), `SSO_CLIENT_OPENKART_SECRET` (the same value as in the website's `.env`) and `MKTV_MKW_API_KEY` (wfc-race's `X-WFC-Internal-Key`). Sign-in is off unless `MKTV_CORE_URL`, the secret and the key are all set.
@@ -21,7 +21,7 @@ The game side, one read-only API per game, on the container network and never pu
 | Game | Server | Env on the server | Env on mktv |
 | --- | --- | --- | --- |
 | Mario Kart 8 (Wii U) | `openpak-mario-kart-8` (nex v1.5.0 or later) | `MK8_API_ADDR=:22853` | `MKTV_API_URL` |
-| Mario Kart 8 Deluxe (Switch) | switch-nexd | `MK8D_API_ADDR=:22854` | `MKTV_MK8D_API_URL` |
+| Mario Kart 8 Deluxe (Switch) | switch-nexd (host network: reached as `host.containers.internal:22854`) | `MK8D_API_ADDR=:22854` | `MKTV_MK8D_API_URL` |
 | Mario Kart 7 (3DS) | `openpak-mario-kart-7` | `MK7_API_ADDR=:22855` | `MKTV_MK7_API_URL` |
 | Mario Kart Wii | wfc-race (guarded HTTP, `:20208`) | its existing internal key | `MKTV_MKW_API_URL`, `MKTV_MKW_API_KEY` |
 
