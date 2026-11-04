@@ -19,6 +19,7 @@
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="stylesheet" href="/static/base.css?v={{.Asset}}">
 <link rel="stylesheet" href="/static/mktv.css?v={{.Asset}}">
+<script src="/static/pillselect.js?v={{.Asset}}" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -40,8 +41,8 @@
   </div>
 </header>
 <main id="main" class="wrap pt-6">
-{{with .Game}}<nav class="subnav" aria-label="{{.Name}}">
-  <span class="subnav-title">{{.Name}}</span>
+{{with .Game}}<nav class="subnav" aria-label="{{.Name}}" data-pillselect>
+  <span class="subnav-title ps-keep">{{.Name}}</span>
   <a href="{{.Home}}" {{if eq $.Path .Home}}aria-current="page"{{end}}>Overview</a>
   {{if .Highlights}}<a href="{{.Base}}/highlights" {{if active $.Path (print .Base "/highlights")}}aria-current="page"{{end}}>Highlights</a>{{end}}
   <a href="{{.Base}}/courses" {{if active $.Path (print .Base "/courses")}}aria-current="page"{{end}}>Courses</a>

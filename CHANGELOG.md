@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.3.3 — 2026-11-04
+
+- Phones: the game sub-navigation (Overview, Courses, Ghosts, Tournaments) becomes one native dropdown when it does not fit on a line. Pills stay on desktop and without JavaScript. New `static/pillselect.js`.
+
 ## v0.3.2 — 2026-11-03
 
 - Deploy docs: production now serves all four games. Mario Kart 8 Deluxe runs on the host network, so mktv reaches it as `http://host.containers.internal:22854`; Mario Kart 7 needs `MK7_API_ADDR=:22855` set on its server; `MKTV_MKW_API_KEY` is wfc-race's `WFC_INTERNAL_KEY`.
