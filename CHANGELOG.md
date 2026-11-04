@@ -1,5 +1,9 @@
 # Changelog — OpenKart (mktv)
 
+## v0.3.4 — 2026-11-04
+
+- Tests no longer reach the live openpak.org rankings API (v0.3.3's release build failed on it); the phone dropdown from v0.3.3 ships in this release.
+
 ## v0.3.3 — 2026-11-04
 
 - Phones: the game sub-navigation (Overview, Courses, Ghosts, Tournaments) becomes one native dropdown when it does not fit on a line. Pills stay on desktop and without JavaScript. New `static/pillselect.js`.

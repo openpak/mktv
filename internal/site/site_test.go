@@ -84,6 +84,7 @@ func newSite(t *testing.T, core string) *Site {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.pub.base = "http://127.0.0.1:1" // never the live openpak.org rankings API: tests answer from the fake game API
 	return s
 }
 
@@ -228,6 +229,7 @@ func newSSOSite(t *testing.T, f *fakeSSO) *Site {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.pub.base = "http://127.0.0.1:1" // never the live openpak.org rankings API: tests answer from the fake game API
 	return s
 }
 
